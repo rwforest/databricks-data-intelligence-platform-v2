@@ -6,7 +6,7 @@ This repository contains the Markdown version of the Databricks Data Intelligenc
 
 The transition from passive data storage to active, reasoning AI systems requires a fundamental shift in architecture. The 12 canonical components of an end-to-end AI system diagram presented in Databricks’ AI Security Framework outline this modern blueprint—a framework connecting raw data directly to real-world inference.
 
-![An end-to-end AI system is shown with 12 key parts grouped into three management areas: DataOps, ModelOps, and DevOps, all under governance.](979-8-8688-2524-8/images/625176_2_En_BookFrontmatter_Figb_HTML.jpg)
+![An end-to-end AI system is shown with 12 key parts grouped into three management areas: DataOps, ModelOps, and DevOps, all under governance.](book_content/images/625176_2_En_BookFrontmatter_Figb_HTML.jpg)
 
 This book is structured as a masterclass curriculum, designed to teach you not just the theory but the practical execution of this architecture. It serves as your step-by-step guide to mastering the Databricks platform, giving you the blueprints to build intelligent, governed, and highly scalable products.
 
