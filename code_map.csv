@@ -1,0 +1,1559 @@
+placeholder_id,placeholder,listing_id,source_file,language,code,caption
+1,{{CODE_0001}},2-1,"14-2._Generative_AI_on_Databricks__Foundations,_Capabilities,_and_Use_Cases.md",python,"[https://​github.​com/​databricks/​databricks-ai-bridge](./https___github.com_databricks_databricks-ai-bridge.md)
+VECTOR_SEARCH_TOOLS.append(
+ VectorSearchRetrieverTool(
+ index_name=""unitygo.rag_chatbot.databricks_documentation_vs_index"",
+ )
+ )
+for vs_tool in VECTOR_SEARCH_TOOLS:
+ TOOL_INFOS.append(create_tool_info(vs_tool.tool, vs_tool.execute))",Code excerpt from get code in playground
+2,{{CODE_0002}},2-2,"14-2._Generative_AI_on_Databricks__Foundations,_Capabilities,_and_Use_Cases.md",python,"from transformers import AutoTokenizer, AutoModelForCausalLM
+tokenizer = AutoTokenizer.from_pretrained(""name-of-tokenizer"")",Getting the tokenizer from the model
+3,{{CODE_0003}},2-3,"14-2._Generative_AI_on_Databricks__Foundations,_Capabilities,_and_Use_Cases.md",,"# Example: Track token usage
+response = model.generate(prompt)
+input_tokens = response.usage.prompt_tokens
+output_tokens = response.usage.completion_tokens
+total_tokens = response.usage.total_tokens",Tracking token usage from FMAPI
+4,{{CODE_0004}},3-1,15-3._Composable_Agents_with_Agent_Bricks__From_Prototype_to_Production.md,,"[Event ""Finals | Playoffs""]
+[Site ""Riyadh, Saudi Arabia""]
+[Date ""2025.08.01""]
+[Round ""03-01-04""]
+[White ""Firouzja, Alireza""]
+[Black ""Carlsen, Magnus""]
+[Result ""0-1""]
+[WhiteElo ""2858""]
+[BlackElo ""2935""]
+[TimeControl ""600""]
+1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5 4. c3 Nf6 5. d3 h6 6. b4 Bb6 7. a4 a6 8. O-O O-O 9. Nbd2 d6 10. h3 Ba7 11. Re1 Ne7 12. Nf1 Ng6 13. Ng3 c6 14. Bb3 d5 15. exd5 Nxd5 16. Bd2 Re8 17. Qc2 Be6 18. Rad1 Qc7 19. c4 Ndf4 20. Bxf4 Nxf4 21. c5 Bxb3 22. Qxb3 a5 23. d4 exd4 24. Rxe8+ Rxe8 25. Rxd4 Rd8 26. Re4 axb4 27. Rxb4 Rd7 28. Re4 Bxc5 29. Qc4 Bxf2+ $1 30. Kxf2 Nd3+ 31. Ke3 Qxg3 32. Re8+ Kh7 33. Qe4+ g6 34. Re7 Qf2# 0-1",Magnus Carlsen vs. Alireza Firouzja during ESport Chess World Cup 2025
+5,{{CODE_0005}},3-2,15-3._Composable_Agents_with_Agent_Bricks__From_Prototype_to_Production.md,sql,"WITH query_results AS (
+ SELECT
+ pgn AS input,
+ ai_query(
+ 't2t-ce7c44b6-endpoint',
+ input,
+ failOnError => false
+ ) AS response
+ FROM (
+ SELECT '[Event ""Finals | Playoffs""]
+[Site ""Riyadh, Saudi Arabia""]
+[Date ""2025.08.01""]
+[Round ""03-01-04""]
+[White ""Firouzja, Alireza""]
+[Black ""Carlsen, Magnus""]
+[Result ""0-1""]
+[WhiteElo ""2858""]
+[BlackElo ""2935""]
+[TimeControl ""600""]
+1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5 4. c3 Nf6 5. d3 h6 6. b4 Bb6 7. a4 a6 8. O-O O-O 9. Nbd2 d6 10. h3 Ba7 11. Re1 Ne7 12. Nf1 Ng6 13. Ng3 c6 14. Bb3 d5 15. Exd5 Nxd5 16. Bd2 Re8 17. Qc2 Be6 18. Rad1 Qc7 19. c4 Ndf4 20. Bxf4 Nxf4 21. c5 Bxb3 22. Qxb3 a5 23. d4 exd4 24. Rxe8+ Rxe8 25. Rxd4 Rd8 26. Re4 axb4 27. Rxb4 Rd7 28. Re4 Bxc5 29. Qc4 Bxf2+ $1 30. Kxf2 Nd3+ 31. Ke3 Qxg3 32. Re8+ Kh7 33. Qe4+ g6 34. Re7 Qf2# 0-1' as pgn
+ )
+)
+SELECT
+ input,
+ response.result AS response,
+ response.errorMessage AS error
+FROM query_results",ai\_query output of a chess game from an Agent Bricks endpoint
+6,{{CODE_0006}},4-1,"16-4._Agent_Bricks_Deep_Dive__Retrieval,_Reasoning,_and_Tooling_Architectures.md",python,"from databricks.sdk import WorkspaceClient
+w = WorkspaceClient()
+response = w.serving_endpoints.query(
+ name=""databricks-bge-large-en"",
+ input=""What is Databricks?""
+)
+display(response.data[0].embedding)",Generate embedding with given tex
+7,{{CODE_0007}},5-1,17-5._Agentic_AI_Design_Patterns_for_Enterprise_Systems.md,python,"import os
+from dotenv import load_dotenv
+from langchain_tavily import TavilySearch
+from databricks_langchain import ChatDatabricks
+from langgraph.graph import StateGraph, START, END, MessagesState
+from langgraph.prebuilt import ToolNode, tools_condition
+load_dotenv()
+# Create tools
+tool = TavilySearch(max_results=2)
+tools = [tool]
+# Create LLM with tools
+llm = ChatDatabricks(endpoint=""databricks-claude-sonnet-4"")
+llm_with_tools = llm.bind_tools(tools)
+def chatbot(state: MessagesState) -> dict:
+ return {""messages"": [llm_with_tools.invoke(state[""messages""])]}
+# Build the graph
+graph_builder = StateGraph(MessagesState)
+# Add nodes
+graph_builder.add_node(""chatbot"", chatbot)
+graph_builder.add_node(""tools"", ToolNode(tools))
+# Add edges
+graph_builder.add_edge(START, ""chatbot"")
+graph_builder.add_conditional_edges(""chatbot"", tools_condition)
+graph_builder.add_edge(""tools"", ""chatbot"")
+graph = graph_builder.compile()
+app = graph",Tool Use pattern in LangGraph with ChatDatabricks
+8,{{CODE_0008}},5-2,17-5._Agentic_AI_Design_Patterns_for_Enterprise_Systems.md,python,"import os
+from dotenv import load_dotenv
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from databricks_langchain import ChatDatabricks
+from langgraph.graph import END, StateGraph, START, MessagesState
+load_dotenv()
+llm = ChatDatabricks(
+ endpoint=""databricks-claude-sonnet-4""
+)
+# Generation prompt and chain
+generation_prompt = ChatPromptTemplate.from_messages([
+ (
+ ""system"",
+ """"""You are an essay assistant tasked with writing excellent 5-paragraph essays. Generate the best essay possible for the user's request. If the user provides critique, respond with a revised version of your previous attempts."""""",
+ ),
+ MessagesPlaceholder(variable_name=""messages""),
+])
+generate = generation_prompt | llm
+# Reflection prompt and chain
+reflection_prompt = ChatPromptTemplate.from_messages([
+ (
+ ""system"",
+ """"""You are a teacher grading an essay submission. Generate critique and recommendations for the user's submission. Provide detailed recommendations, including requests for length, depth, style, etc."""""",
+ ),
+ MessagesPlaceholder(variable_name=""messages""),
+])
+reflect = reflection_prompt | llm
+async def generation_node(state: MessagesState) -> MessagesState:
+ """"""Generate or revise the essay based on current messages""""""
+ return {""messages"": [await generate.ainvoke(state[""messages""])]}
+async def reflection_node(state: MessagesState) -> MessagesState:
+ """"""Reflect on the generated essay and provide critique""""""
+ # Swap message roles: reflector sees AI-generated essay as human input cls_map = {""ai"": HumanMessage, ""human"": AIMessage}
+ translated = [state[""messages""][0]] + [ # Keep original request as-is
+ cls_map[msg.type](./content=msg.content) for msg in state[""messages""][1:]
+ ]
+ res = await reflect.ainvoke(translated)
+ # Return critique as human feedback for the generator
+ return {""messages"": [HumanMessage(content=res.content)]}
+def should_continue(state: MessagesState) -> str:
+ """"""Decide whether to continue reflecting or end the process""""""
+ ai_messages = [msg for msg in state[""messages""] if msg.type == ""ai""]
+ if len(ai_messages) >= 3:
+ return END
+ return ""reflect""
+# Build the graph
+builder = StateGraph(MessagesState)
+builder.add_node(""generate"", generation_node)
+builder.add_node(""reflect"", reflection_node)
+# Add edges
+builder.add_edge(START, ""generate"")
+builder.add_conditional_edges(""generate"", should_continue)
+builder.add_edge(""reflect"", ""generate"")
+graph = builder.compile()
+app = graph",Reflection pattern in LangGraph with ChatDatabricks
+9,{{CODE_0009}},5-3,17-5._Agentic_AI_Design_Patterns_for_Enterprise_Systems.md,python,"from typing import Annotated, List, Tuple, Union, Literal
+from typing_extensions import TypedDict
+from pydantic import BaseModel, Field
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_community.tools.tavily_search import TavilySearchResults
+from databricks_langchain import ChatDatabricks
+from langgraph.prebuilt import create_react_agent
+from langgraph.graph import StateGraph, START, MessagesState
+# State definition that extends MessagesState for Chat mode compatibility
+class PlanExecute(MessagesState):
+ plan: List[str]
+ past_steps: Annotated[List[Tuple], operator.add]
+ response: str
+# Pydantic models for structured output
+class Plan(BaseModel):
+ """"""Plan to follow in future""""""
+ steps: List[str] = Field(
+ description=""different steps to follow, should be in sorted order""
+ )
+class Response(BaseModel):
+ """"""Response to user.""""""
+ response: str
+class Act(BaseModel):
+ """"""Action to perform.""""""
+ action: Union[Response, Plan] = Field(
+ description=""""""Action to perform. If you want to respond to user, use Response. If you need to further use tools to get the answer, use Plan.""""""
+ )
+# Initialize LLM and tools
+llm = ChatDatabricks(
+ endpoint=""databricks-claude-sonnet-4""
+)
+tools = [TavilySearchResults(max_results=3)]
+# Create execution agent
+prompt = ""You are a helpful assistant.""
+agent_executor = create_react_agent(llm, tools, prompt=prompt)
+# Planning chain
+planner_prompt = ChatPromptTemplate.from_messages([
+ (
+ ""system"",
+ """"""For the given objective, come up with a simple step by step plan. This plan should involve individual tasks, that if executed correctly will yield the correct answer. Do not add any superfluous steps. The result of the final step should be the final answer. Make sure that each step has all the information needed - do not skip steps."""""",
+ ),
+ (""placeholder"", ""{messages}""),
+])
+planner = planner_prompt | llm.with_structured_output(Plan)
+# Re-planning chain
+replanner_prompt = ChatPromptTemplate.from_template(
+ """"""For the given objective, come up with a simple step by step plan. This plan should involve individual tasks, that if executed correctly will yield the correct answer. Do not add any superfluous steps. The result of the final step should be the final answer. Make sure that each step has all the information needed - do not skip steps.
+Your objective was this:
+{input}
+Your original plan was this:
+{plan}
+You have currently done the following steps:
+{past_steps}
+Update your plan accordingly. If no more steps are needed and you can return to the user, then respond with that. Otherwise, fill out the plan. Only add steps to the plan that still NEED to be done. Do not return previously done steps as part of the plan.""""""
+)
+replanner = replanner_prompt | llm.with_structured_output(Act)
+# Node functions
+async def plan_step(state: PlanExecute):
+ """"""Create initial plan based on the last user message""""""
+ # Get the last user message as the objective
+ user_message = next((msg.content for msg in reversed(state[""messages""]) if msg.type == ""human""), """")
+ plan = await planner.ainvoke({""messages"": [(""user"", user_message)]})
+ return {""plan"": plan.steps}
+async def execute_step(state: PlanExecute):
+ """"""Execute the current step in the plan""""""
+ plan = state[""plan""]
+ plan_str = ""\\n"".join(f""{i+1}. {step}"" for i, step in enumerate(plan))
+ task = plan[0]
+ task_formatted = f""""""For the following plan:
+{plan_str}
+You are tasked with executing step 1: {task}.""""""
+ agent_response = await agent_executor.ainvoke(
+ {""messages"": [(""user"", task_formatted)]}
+ )
+ return {
+ ""past_steps"": [(task, agent_response[""messages""][-1].content)],
+ }
+async def replan_step(state: PlanExecute):
+ """"""Re-evaluate plan based on completed steps""""""
+ # Get the original user input for re-planning
+ user_message = next((msg.content for msg in reversed(state[""messages""]) if msg.type == ""human""), """")
+ replan_input = {
+ ""input"": user_message,
+ ""plan"": state.get(""plan"", []),
+ ""past_steps"": state.get(""past_steps"", [])
+ }
+ output = await replanner.ainvoke(replan_input)
+ if isinstance(output.action, Response):
+ # Add the final response as an AI message
+ from langchain_core.messages import AIMessage
+ return {""messages"": [AIMessage(content=output.action.response)]}
+ else:
+ return {""plan"": output.action.steps}
+def route_after_replan(state: PlanExecute) -> Literal[""agent"", ""__end__""]:
+ """"""Route to agent for next step execution or end the graph if a final response is ready.""""""
+ # Check if the last message is an AI response (indicating completion)
+ if state[""messages""] and state[""messages""][-1].type == ""ai"":
+ # Check if it's a final response (not from agent_executor)
+ last_msg = state[""messages""][-1]
+ if hasattr(last_msg, 'content') and not any(word in last_msg.content.lower() for word in ['step', 'plan', 'task']):
+ return ""__end__""
+ return ""agent""
+# Build the graph
+workflow = StateGraph(PlanExecute)
+# Add nodes
+workflow.add_node(""planner"", plan_step)
+workflow.add_node(""agent"", execute_step)
+workflow.add_node(""replan"", replan_step)
+# Add edges
+workflow.add_edge(START, ""planner"")
+workflow.add_edge(""planner"", ""agent"")
+workflow.add_edge(""agent"", ""replan"")
+workflow.add_conditional_edges(
+ ""replan"",
+ should_end,
+ [""agent"", ""__end__""],
+)
+graph = workflow.compile()
+app = graph",Planning pattern in LangGraph with ChatDatabricks
+10,{{CODE_0010}},5-4,17-5._Agentic_AI_Design_Patterns_for_Enterprise_Systems.md,python,"from pathlib import Path
+from tempfile import TemporaryDirectory
+from typing import Annotated, Dict, List, Optional, Literal
+from typing_extensions import TypedDict
+from langchain_community.document_loaders import WebBaseLoader
+from langchain_core.tools import tool
+from langchain_core.messages import HumanMessage
+from langchain_core.language_models.chat_models import BaseChatModel
+from langchain_tavily import TavilySearch
+from databricks_langchain import ChatDatabricks
+from langgraph.prebuilt import create_react_agent
+from langgraph.graph import StateGraph, MessagesState, START, END
+from langgraph.types import Command
+# Initialize temporary directory for file operations
+_TEMP_DIRECTORY = TemporaryDirectory()
+WORKING_DIRECTORY = Path(_TEMP_DIRECTORY.name)
+class State(MessagesState):
+ next: str
+# Initialize LLM
+llm = ChatDatabricks(
+ endpoint=""databricks-claude-sonnet-4-6"",
+)
+# Research team tools
+tavily_tool = TavilySearch(max_results=5)
+@tool
+def scrape_webpages(urls: list[str]) -> str:
+ """"""Use requests and bs4 to scrape the provided web pages for detailed information.""""""
+ loader = WebBaseLoader(urls)
+ docs = loader.load()
+ return ""\\n\\n"".join([
+ f'<Document name=""{doc.metadata.get(""title"", """")}"">\\n{doc.page_content}\\n</Document>'
+ for doc in docs
+ ])
+# Document writing team tools
+@tool
+def create_outline(
+ points: Annotated[List[str], ""List of main points or sections.""],
+ file_name: Annotated[str, ""File path to save the outline.""],
+) -> Annotated[str, ""Path of the saved outline file.""]:
+ """"""Create and save an outline.""""""
+ with (WORKING_DIRECTORY / file_name).open(""w"") as file:
+ for i, point in enumerate(points):
+ file.write(f""{i + 1}. {point}\\n"")
+ return f""Outline saved to {file_name}""
+@tool
+def read_document(
+ file_name: Annotated[str, ""File path to read the document from.""],
+ start: Annotated[Optional[int], ""The start line. Default is 0""] = None,
+ end: Annotated[Optional[int], ""The end line. Default is None""] = None,
+) -> Annotated[str, ""Contents of the document.""]:
+ """"""Read the specified document.""""""
+ with (WORKING_DIRECTORY / file_name).open(""r"") as file:
+ lines = file.readlines()
+ if start is None:
+ start = 0
+ return ""\\n"".join(lines[start:end])
+@tool
+def write_document(
+ content: Annotated[str, ""Text content to be written into the document.""],
+ file_name: Annotated[str, ""File path to save the document.""],
+) -> Annotated[str, ""Path of the saved document file.""]:
+ """"""Create and save a text document.""""""
+ with (WORKING_DIRECTORY / file_name).open(""w"") as file:
+ file.write(content)
+ return f""Document saved to {file_name}""
+@tool
+def edit_document(
+ file_name: Annotated[str, ""Path of the document to be edited.""],
+ inserts: Annotated[
+ Dict[int, str],
+ ""Dictionary where key is the line number (1-indexed) and value is the text to be inserted at that line."",
+ ],
+) -> Annotated[str, ""Path of the edited document file.""]:
+ """"""Edit a document by inserting text at specific line numbers.""""""
+ with (WORKING_DIRECTORY / file_name).open(""r"") as file:
+ lines = file.readlines()
+ sorted_inserts = sorted(inserts.items(), reverse=True)
+ for line_number, text in sorted_inserts:
+ if 1 <= line_number <= len(lines) + 1:
+ lines.insert(line_number - 1, text + ""\\n"")
+ else:
+ return f""Error: Line number {line_number} is out of range.""
+ with (WORKING_DIRECTORY / file_name).open(""w"") as file:
+ file.writelines(lines)
+ return f""Document edited and saved to {file_name}""
+# Supervisor node factory
+def make_supervisor_node(llm: BaseChatModel, members: list[str]):
+ options = [""FINISH""] + members
+ system_prompt = f""""""You are a supervisor tasked with managing a conversation between the following workers: {', '.join(members)}. Given the following user request, respond with the worker to act next. Each worker will perform a task and respond with their results and status. When finished, respond with FINISH.""""""
+ class Router(TypedDict):
+ """"""Worker to route to next. If no workers needed, route to FINISH.""""""
+ next: Literal[*options]
+ def supervisor_node(state: State) -> Command[Literal[*members, ""__end__""]]:
+ """"""An LLM-based router.""""""
+ messages = [
+ {""role"": ""system"", ""content"": system_prompt},
+ ] + state[""messages""]
+ response = llm.with_structured_output(Router).invoke(messages)
+ goto = response[""next""]
+ if goto == ""FINISH"":
+ goto = END
+ return Command(goto=goto, update={""next"": goto})
+ return supervisor_node
+# Research Team
+search_agent = create_react_agent(llm, tools=[tavily_tool])
+def search_node(state: State) -> Command[Literal[""supervisor""]]:
+ result = search_agent.invoke(state)
+ return Command(
+ update={
+ ""messages"": [
+ HumanMessage(content=result[""messages""][-1].content, name=""search"")
+ ]
+ },
+ goto=""supervisor"",
+ )
+web_scraper_agent = create_react_agent(llm, tools=[scrape_webpages])
+def web_scraper_node(state: State) -> Command[Literal[""supervisor""]]:
+ result = web_scraper_agent.invoke(state)
+ return Command(
+ update={
+ ""messages"": [
+ HumanMessage(content=result[""messages""][-1].content, name=""web_scraper"")
+ ]
+ },
+ goto=""supervisor"",
+ )
+research_supervisor_node = make_supervisor_node(llm, [""search"", ""web_scraper""])
+# Build research team graph
+research_builder = StateGraph(State)
+research_builder.add_node(""supervisor"", research_supervisor_node)
+research_builder.add_node(""search"", search_node)
+research_builder.add_node(""web_scraper"", web_scraper_node)
+research_builder.add_edge(START, ""supervisor"")
+research_graph = research_builder.compile()
+# Document Writing Team
+doc_writer_agent = create_react_agent(
+ llm,
+ tools=[write_document, edit_document, read_document],
+ prompt=""""""You can read, write and edit documents based on note-taker's outlines. Don't ask follow-up questions."""""",
+)
+def doc_writing_node(state: State) -> Command[Literal[""supervisor""]]:
+ result = doc_writer_agent.invoke(state)
+ return Command(
+ update={
+ ""messages"": [
+ HumanMessage(content=result[""messages""][-1].content, name=""doc_writer"")
+ ]
+ },
+ goto=""supervisor"",
+ )
+note_taking_agent = create_react_agent(
+ llm,
+ tools=[create_outline, read_document],
+ prompt=""""""You can read documents and create outlines for the document writer. Don't ask follow-up questions."""""",
+)
+def note_taking_node(state: State) -> Command[Literal[""supervisor""]]:
+ result = note_taking_agent.invoke(state)
+ return Command(
+ update={
+ ""messages"": [
+ HumanMessage(content=result[""messages""][-1].content, name=""note_taker"")
+ ]
+ },
+ goto=""supervisor"",
+ )
+doc_writing_supervisor_node = make_supervisor_node(
+ llm, [""doc_writer"", ""note_taker""]
+)
+# Build document writing team graph
+paper_writing_builder = StateGraph(State)
+paper_writing_builder.add_node(""supervisor"", doc_writing_supervisor_node)
+paper_writing_builder.add_node(""doc_writer"", doc_writing_node)
+paper_writing_builder.add_node(""note_taker"", note_taking_node)
+paper_writing_builder.add_edge(START, ""supervisor"")
+paper_writing_graph = paper_writing_builder.compile()
+# Top-level supervisor and team coordination
+# Orchestrates the research and writing teams via a hierarchical graph
+teams_supervisor_node = make_supervisor_node(llm, [""research_team"", ""writing_team""])
+def call_research_team(state: State) -> Command[Literal[""supervisor""]]:
+ # Pass the full conversation context to the research team
+ response = research_graph.invoke({""messages"": state[""messages""]})
+ return Command(
+ update={
+ ""messages"": [
+ HumanMessage(content=response[""messages""][-1].content, name=""research_team"")
+ ]
+ },
+ goto=""supervisor"",
+ )
+def call_paper_writing_team(state: State) -> Command[Literal[""supervisor""]]:
+ # Pass the full conversation context to the writing team
+ response = paper_writing_graph.invoke({""messages"": state[""messages""]})
+ return Command(
+ update={
+ ""messages"": [
+ HumanMessage(content=response[""messages""][-1].content, name=""writing_team"")
+ ]
+ },
+ goto=""supervisor"",
+ )
+# Build top-level hierarchical graph
+super_builder = StateGraph(State)
+super_builder.add_node(""supervisor"", teams_supervisor_node)
+super_builder.add_node(""research_team"", call_research_team)
+super_builder.add_node(""writing_team"", call_paper_writing_team)
+super_builder.add_edge(START, ""supervisor"")
+# Compile the graph
+graph = super_builder.compile()
+app = graph",Supervisor pattern in LangGraph with ChatDatabricks
+11,{{CODE_0011}},5-5,17-5._Agentic_AI_Design_Patterns_for_Enterprise_Systems.md,python,"from typing import Annotated, Literal
+from langchain_core.messages import BaseMessage, HumanMessage
+from langchain_core.tools import tool
+from langchain_tavily import TavilySearch
+from databricks_langchain import ChatDatabricks
+from langgraph.prebuilt import create_react_agent
+from langgraph.graph import MessagesState, END, StateGraph, START
+from langgraph.types import Command
+llm = ChatDatabricks(
+ endpoint=""databricks-claude-sonnet-4""
+)
+tavily_tool = TavilySearch(max_results=5)
+def make_system_prompt(suffix: str) -> str:
+ return f""""""You are a helpful AI assistant, collaborating with other assistants. Use the provided tools to progress towards answering the question. If you are unable to fully answer, that's OK, another assistant with different tools will help where you left off. Execute what you can to make progress. If you or any of the other assistants have the final answer or deliverable, prefix your response with FINAL ANSWER so the team knows to stop.
+{suffix}""""""
+# Helper function to determine next node
+def get_next_node(last_message: BaseMessage, goto: str):
+ if last_message.content and ""FINAL ANSWER"" in last_message.content:
+ # Any agent decided the work is done
+ return END
+ return goto
+# Research agent and node
+research_agent = create_react_agent(
+ llm,
+ tools=[tavily_tool],
+ prompt=make_system_prompt(
+ """"""You can only do research. You are working with an analyst colleague.""""""
+ ),
+)
+def research_node(
+ state: MessagesState,
+) -> Command[Literal[""analyst"", ""__end__""]]:
+ result = research_agent.invoke(state)
+ goto = get_next_node(result[""messages""][-1], ""analyst"")
+ # Wrap in a HumanMessage so other agents in the graph treat it as user input
+ result[""messages""][-1] = HumanMessage(
+ content=result[""messages""][-1].content, name=""researcher""
+ )
+ return Command(
+ update={
+ # Share internal message history of research agent with other agents
+ ""messages"": result[""messages""],
+ },
+ goto=goto,
+ )
+# Analyst agent and node
+analyst_agent = create_react_agent(
+ llm,
+ tools=[],
+ prompt=make_system_prompt(
+ """"""You analyze and summarize research data. You are working with a researcher colleague. Provide insights, trends, and conclusions based on the research provided.""""""
+ ),
+)
+def analyst_node(state: MessagesState) -> Command[Literal[""researcher"", ""__end__""]]:
+ result = analyst_agent.invoke(state)
+ goto = get_next_node(result[""messages""][-1], ""researcher"")
+ # Wrap in a human message for compatibility
+ result[""messages""][-1] = HumanMessage(
+ content=result[""messages""][-1].content, name=""analyst""
+ )
+ return Command(
+ update={
+ ""messages"": result[""messages""],
+ },
+ goto=goto,
+ )
+# Build the graph
+workflow = StateGraph(MessagesState)
+workflow.add_node(""researcher"", research_node)
+workflow.add_node(""analyst"", analyst_node)
+workflow.add_edge(START, ""researcher"")
+graph = workflow.compile()
+app = graph",Collaboration pattern in LangGraph with ChatDatabricks
+12,{{CODE_0012}},5-6,17-5._Agentic_AI_Design_Patterns_for_Enterprise_Systems.md,python,"from datetime import UTC, datetime
+from typing import Dict, List, Literal, Optional, Any, cast
+from langchain_core.messages import AIMessage, BaseMessage
+from langchain_core.tools import tool
+from langchain_tavily import TavilySearch
+from databricks_langchain import ChatDatabricks
+from langgraph.graph import StateGraph, MessagesState, START
+from langgraph.prebuilt import ToolNode
+llm = ChatDatabricks(
+ endpoint=""databricks-claude-sonnet-4-6"",
+)
+# ReAct System prompt
+SYSTEM_PROMPT = """"""You are a helpful AI assistant that uses the ReAct (Reasoning and Acting) approach to solve problems.
+You should follow this pattern:
+1. **Thought**: Think about what you need to do to answer the question
+2. **Action**: Use a tool if needed to gather information
+3. **Observation**: Analyze the results from the tool
+4. Repeat steps 1-3 as needed
+5. **Final Answer**: Provide your conclusion when you have enough information
+Always start your response with ""Thought:"" and clearly show your reasoning process.
+When you use a tool, explain why you're using it.
+When you get results, analyze what they mean.
+System time: {system_time}""""""
+@tool
+async def search(query: str) -> Optional[dict[str, Any]]:
+ tavily = TavilySearch(max_results=10)
+ return cast(dict[str, Any], await tavily.ainvoke({""query"": query}))
+TOOLS = [search]
+class State(MessagesState):
+ is_last_step: bool = False
+ reasoning_step_count: int = 0
+async def reasoning_step(state: State) -> dict[str, Any]:
+ """"""ReAct reasoning step — the model thinks about what to do next.
+ This is where the 'Reasoning' part of ReAct happens.
+ """"""
+ # Initialize the model with tool binding
+ model = llm.bind_tools(TOOLS)
+ system_message = SYSTEM_PROMPT.format(
+ system_time=datetime.now(tz=UTC).isoformat()
+ )
+ # Add ReAct-specific guidance based on step count
+ step_count = state.get(""reasoning_step"", 0)
+ if step_count == 0:
+ guidance = ""\\n\\nThis is your first step. Start with 'Thought:' and think about how to approach this problem.""
+ else:
+ guidance = f""\\n\\nThis is step {step_count + 1}. Continue with 'Thought:' and decide what to do next based on previous observations.""
+ messages = [
+ {""role"": ""system"", ""content"": system_message + guidance}
+ ] + state[""messages""]
+ # Get the model's response
+ response = cast(AIMessage, await model.ainvoke(messages))
+ if state.get(""is_last_step"", False) and response.tool_calls:
+ return {
+ ""messages"": [
+ AIMessage(
+ id=response.id,
+ content=""Thought: I've reached the maximum number of steps. Let me provide a final answer based on what I've learned so far.\\n\\nFinal Answer: Sorry, I could not complete the full investigation in the specified number of steps, but I can provide the information I've gathered."",
+ )
+ ],
+ ""reasoning_step"": step_count + 1
+ }
+ # Return the model's response and increment step count
+ return {
+ ""messages"": [response],
+ ""reasoning_step"": step_count + 1
+ }
+def route_reasoning_output(state: State) -> Literal[""__end__"", ""tools""]:
+ """"""Determine the next node based on the reasoning output.
+ In ReAct, after reasoning:
+ - If the model wants to use tools (Action), go to tools
+ - If the model provides a final answer, end
+ """"""
+ last_message = state[""messages""][-1]
+ if not isinstance(last_message, AIMessage):
+ raise ValueError(
+ f""Expected AIMessage in output edges, but got {type(last_message).__name__}""
+ )
+ # Check if this is a final answer
+ if ""final answer"" in last_message.content.lower():
+ return ""__end__""
+ # If there is a tool call (Action), go to tools
+ if last_message.tool_calls:
+ return ""tools""
+ return ""__end__""
+# Build the ReAct graph
+builder = StateGraph(State)
+builder.add_node(""reasoning"", reasoning_step) # The ""Reasoning"" part of ReAct
+builder.add_node(""tools"", ToolNode(TOOLS)) # The ""Acting"" part of ReAct
+builder.add_edge(START, ""reasoning"")
+builder.add_conditional_edges(
+ ""reasoning"",
+ route_reasoning_output,
+)
+builder.add_edge(""tools"", ""reasoning"")
+graph = builder.compile()
+app = graph",ReAct pattern in LangGraph with ChatDatabricks
+13,{{CODE_0013}},6-1,"18-6._Databricks_As_an_Agentic_Platform__Orchestration,_Context,_and_Control.md",python,"SELECT ai_classify('my name is Jason, email address is jason@email.com', ARRAY('contains PII', 'no PII')) as classification
+UNION ALL
+SELECT ai_classify('Today''s weather is awesome', ARRAY('contains PII', 'no PII'))",AI Query in serverless SQL
+14,{{CODE_0014}},6-2,"18-6._Databricks_As_an_Agentic_Platform__Orchestration,_Context,_and_Control.md",python,"SELECT ai_mask('my name is Jason, email address is jason@email.com', ARRAY('name', 'email')) as text",ai\_mask Function for Ease of PII Scanning
+15,{{CODE_0015}},9-1,"21-9._Building_Security-First,_Production-Grade_Databricks_Apps.md",,"/my-python-app
+ ├── app.yml
+ ├── requirements.txt
+ ├── .gitignore
+ ├── README.md
+ └── src
+ └── app.py",Python App folder structure
+16,{{CODE_0016}},9-2,"21-9._Building_Security-First,_Production-Grade_Databricks_Apps.md",,"/my-node-app
+ ├── app.yml
+ ├── package.json
+ ├── .gitignore
+ ├── README.md
+ └── src
+ └── app.js",Node.js folder structure
+17,{{CODE_0017}},9-3,"21-9._Building_Security-First,_Production-Grade_Databricks_Apps.md",python,"env:
+ - name: WAREHOUSE_ID
+ value: sql_warehouse_id
+ - name: SECRET_KEY
+ valueFrom: secret",Environment variables in app.yml
+18,{{CODE_0018}},10-1,22-10._AI_Runtime__Elastic_Compute_for_AI_Workloads.md,python,"from pyspark.ml.classification import LogisticRegression
+from pyspark.ml.feature import VectorAssembler
+from sklearn.datasets import load_breast_cancer
+pdf = load_breast_cancer(as_frame=True).frame
+pdf[""label""] = pdf[""target""]
+feature_cols = [col for col in pdf.columns if col not in (""label"", ""target"")]
+spark_df = spark.createDataFrame(pdf)
+assembler = VectorAssembler(inputCols=feature_cols, outputCol=""features"")
+dataset = assembler.transform(spark_df).select(""features"", ""label"")
+lor = LogisticRegression(maxIter=20, regParam=0.0, elasticNetParam=0.0)
+lor_model = lor.fit(dataset)
+transformed_dataset = lor_model.transform(dataset)",Sample Logistic Regression that runs on a serverless CPU
+19,{{CODE_0019}},10-2,22-10._AI_Runtime__Elastic_Compute_for_AI_Workloads.md,python,"from lightgbm_ray import RayDMatrix, RayParams, train
+from sklearn.datasets import load_breast_cancer
+import mlflow
+train_x, train_y = load_breast_cancer(return_X_y=True)
+train_set = RayDMatrix(train_x, train_y)
+evals_result = {}
+bst = train(
+ {
+ ""objective"": ""binary"",
+ ""metric"": [""binary_logloss"", ""binary_error""],
+ },
+ train_set,
+ evals_result=evals_result,
+ valid_sets=[train_set],
+ valid_names=[""train""],
+ verbose_eval=False,
+ ray_params=RayParams(num_actors=2, cpus_per_actor=2))
+mlflow.set_registry_uri(""databricks-uc"")
+with mlflow.start_run():
+ mlflow.lightgbm.log_model(
+ bst.booster_,
+ ""model"",
+ input_example=train_x[:5],
+ registered_model_name=""unitygo.ml.lgbm_breast_cancer""
+ )
+ mlflow.log_metrics({""final_train_error"": evals_result[""train""][""binary_error""][-1]})",Sample Ray on LightGBM model runs on a serverless GPU
+20,{{CODE_0020}},10-3,22-10._AI_Runtime__Elastic_Compute_for_AI_Workloads.md,python,"from serverless_gpu.launcher import distributed
+from serverless_gpu.compute import GPUType
+@distributed(gpus=8, gpu_type=GPUType.A10, remote=True)
+def train_model():
+ # This code runs on the remote GPU nodes
+ ...",Declaration for distributed training
+21,{{CODE_0021}},10-4,22-10._AI_Runtime__Elastic_Compute_for_AI_Workloads.md,,"train_model.distributed()
+train_model.distributed(1)",Launching the model training code
+22,{{CODE_0022}},10-5,22-10._AI_Runtime__Elastic_Compute_for_AI_Workloads.md,python,"import torch
+import torch.distributed as dist
+from torch.nn.parallel import DistributedDataParallel as DDP
+from torch.utils.data import DataLoader, DistributedSampler, TensorDataset
+import torch.nn as nn
+import torch.optim as optim
+from serverless_gpu import distributed, runtime
+from serverless_gpu.compute import GPUType
+import mlflow
+def setup():
+ dist.init_process_group(""nccl"")
+ torch.cuda.set_device(runtime.get_local_rank())
+def cleanup():
+ dist.destroy_process_group()
+class SimpleMLP(nn.Module):
+ def __init__(self, input_dim=10, hidden_dim=64, output_dim=1):
+ super().__init__()
+ self.net = nn.Sequential(
+ nn.Linear(input_dim, hidden_dim),
+ nn.ReLU(),
+ nn.Dropout(0.2),
+ nn.Linear(hidden_dim, hidden_dim),
+ nn.ReLU(),
+ nn.Dropout(0.2),
+ nn.Linear(hidden_dim, output_dim)
+ )
+ def forward(self, x):
+ return self.net(x)
+@distributed(gpus=2, gpu_type=GPUType.A10, remote=True)
+def train(num_epochs=3, batch_size=64) -> None:
+ setup()
+ rank = runtime.get_global_rank()
+ local_rank = runtime.get_local_rank()
+ device = torch.device(f""cuda:{local_rank}"")
+ with mlflow.start_run():
+ model = SimpleMLP(input_dim=784, hidden_dim=256, output_dim=10).to(device)
+ model = DDP(model, device_ids=[local_rank])
+ x = torch.randn(5000, 10)
+ y = 3 * x.sum(dim=1, keepdim=True) + torch.randn(5000, 1) * 0.1
+ dataset = TensorDataset(x, y)
+ sampler = DistributedSampler(dataset)
+ dataloader = DataLoader(dataset, sampler=sampler, batch_size=batch_size)
+ optimizer = optim.Adam(model.parameters(), lr=0.001)
+ loss_fn = nn.MSELoss()
+ for epoch in range(num_epochs):
+ sampler.set_epoch(epoch)
+ model.train()
+ total_loss = 0.0
+ for step, (xb, yb) in enumerate(dataloader):
+ xb, yb = xb.to(device), yb.to(device)
+ optimizer.zero_grad()
+ loss = loss_fn(model(xb), yb)
+ if rank == 0:
+ mlflow.log_metric(""mse_loss"", loss.item(), step=epoch * len(dataloader) + step)
+ loss.backward()
+ optimizer.step()
+ total_loss += loss.item() * xb.size(0)
+ if rank == 0:
+ avg_loss = total_loss / len(dataloader.dataset)
+ mlflow.log_metric(""avg_loss"", avg_loss)
+ ckpt = {
+ ""MODEL_STATE"": model.state_dict(),
+ ""EPOCHS_RUN"": epoch,
+ }
+ torch.save(ckpt, ""/tmp/model.pt"")
+ cleanup()
+train.distributed()",Training a simple multilayer perceptron (MLP) neural network using PyTorch DDP
+23,{{CODE_0023}},10-6,22-10._AI_Runtime__Elastic_Compute_for_AI_Workloads.md,python,"from serverless_gpu.ray import ray_launch
+@ray_launch(gpus=8, gpu_type=""H100"", remote=True)
+def ray_function():
+ ...
+ray_function.distributed()",Skeleton code to train with Ray in serverless GPU
+24,{{CODE_0024}},10-7,22-10._AI_Runtime__Elastic_Compute_for_AI_Workloads.md,python,"%pip install ray
+from serverless_gpu.ray import ray_launch
+# Config
+MODEL_NAME = ""Qwen/Qwen2-VL-2B-Instruct""
+CHECKPOINT_DIR = ""/dbfs/checkpoints/qwen2-vl-demo""
+EXPERIMENT_NAME = ""/Users/demo/ray-data-fsdp-demo""
+@ray_launch(gpus=4, gpu_type='A10', remote=True)
+def train_func():
+ """"""Ray Train + FSDP distributed Vision-Language Model (VLM) training.""""""
+ import os import io import torch import mlflow import ray import ray.data import numpy as np
+ from PIL import Image
+ from functools import partial
+ from datasets import load_dataset
+ from torch.utils.data import Dataset as TorchDataset, DataLoader
+ from transformers import Qwen2VLForConditionalGeneration, AutoProcessor
+ from transformers.models.qwen2_vl.modeling_qwen2_vl import Qwen2VLDecoderLayer
+ from peft import LoraConfig, get_peft_model
+ from ray import train as ray_train
+ from ray.train.torch import TorchTrainer, TorchConfig
+ from ray.train import ScalingConfig, RunConfig
+ from torch.distributed.fsdp import FullyShardedDataParallel as FSDP
+ from torch.distributed.fsdp import ShardingStrategy, MixedPrecision, FullStateDictConfig, StateDictType
+ from torch.distributed.fsdp.wrap import transformer_auto_wrap_policy
+ # ========= Data Loading ===========================
+ def create_ray_dataset():
+ hf_dataset = load_dataset(""HuggingFaceH4/llava-instruct-mix-vsft"", split=""train[:1000]"")
+ items = []
+ for item in hf_dataset:
+ d = dict(item)
+ if d.get(""images""):
+ d[""images""] = [np.array(img) if hasattr(img, ""convert"") else img for img in d[""images""]]
+ items.append(d)
+ return ray.data.from_items(items)
+ # ========= Dataset & Collate ===========================
+ class VLMDataset(TorchDataset):
+ MAX_TEXT_LEN, MAX_IMG_SIZE = 1500, 448
+ def __init__(self, items, processor):
+ self.items, self.processor = items, processor
+ def __len__(self): return len(self.items)
+ def __getitem__(self, idx):
+ item = self.items[idx]
+ msgs = [{**m, ""content"": m[""content""][:self.MAX_TEXT_LEN] + ""...""
+ if m[""role""] == ""assistant"" and len(str(m[""content""])) > self.MAX_TEXT_LEN
+ else m[""content""]} for m in item[""messages""]]
+ text = self.processor.apply_chat_template(msgs, tokenize=False, add_generation_prompt=False)
+ img = item.get(""image"") or Image.new(""RGB"", (224, 224), ""white"")
+ if img and max(img.size) > self.MAX_IMG_SIZE:
+ ratio = self.MAX_IMG_SIZE / max(img.size)
+ img = img.resize((int(img.size[0]*ratio), int(img.size[1]*ratio)), Image.Resampling.LANCZOS)
+ return {""text"": text, ""image"": img}
+ def collate_fn(batch, processor):
+ texts, images = [b[""text""] for b in batch], [b[""image""] for b in batch]
+ try:
+ enc = processor(text=texts, images=images, padding=True, truncation=True, max_length=2048, return_tensors=""pt"")
+ except ValueError:
+ enc = processor(text=texts, images=images, padding=True, truncation=False, return_tensors=""pt"")
+ enc[""labels""] = enc[""input_ids""].clone()
+ return enc
+ # ========= Training Worker =============================
+ def train_worker(config: dict):
+ rank, local_rank = int(os.environ.get(""RANK"", 0)), int(os.environ.get(""LOCAL_RANK"", 0))
+ device = torch.device(f""cuda:{local_rank}"")
+ # MLflow on rank 0
+ if rank == 0:
+ os.environ[""MLFLOW_EXPERIMENT_NAME""] = config[""experiment_name""]
+ os.environ[""MLFLOW_TRACKING_URI""] = ""databricks""
+ mlflow.start_run()
+ # Load model + LoRA
+ model = Qwen2VLForConditionalGeneration.from_pretrained(
+ MODEL_NAME, torch_dtype=torch.bfloat16, attn_implementation=""sdpa""
+ )
+ processor = AutoProcessor.from_pretrained(MODEL_NAME)
+ model = get_peft_model(model, LoraConfig(
+ r=16, lora_alpha=16, lora_dropout=0.05,
+ target_modules=[""q_proj"", ""k_proj"", ""v_proj"", ""o_proj""],
+ bias=""none"", task_type=""CAUSAL_LM""
+ ))
+ model = model.to(torch.bfloat16)
+ model.train()
+ model.gradient_checkpointing_enable(gradient_checkpointing_kwargs={""use_reentrant"": False})
+ # FSDP wrap
+ model = FSDP(
+ model,
+ sharding_strategy=ShardingStrategy.FULL_SHARD,
+ mixed_precision=MixedPrecision(param_dtype=torch.bfloat16, reduce_dtype=torch.bfloat16, buffer_dtype=torch.bfloat16),
+ auto_wrap_policy=partial(transformer_auto_wrap_policy, transformer_layer_cls={Qwen2VLDecoderLayer}),
+ device_id=device,
+ use_orig_params=True,
+ )
+ print(f""Rank {rank}: FSDP ready"")
+ # Process Ray Data shard
+ train_items = []
+ for batch in ray_train.get_dataset_shard(""train"").iter_batches(batch_size=10):
+ for i in range(len(batch[""messages""])):
+ raw_imgs = batch.get(""images"", [None]*len(batch[""messages""]))[i] or []
+ img = None
+ if raw_imgs:
+ img_data = raw_imgs[0] if isinstance(raw_imgs, list) else raw_imgs
+ if isinstance(img_data, np.ndarray):
+ img = Image.fromarray(img_data).convert(""RGB"")
+ elif isinstance(img_data, dict) and img_data.get(""bytes""):
+ img = Image.open(io.BytesIO(img_data[""bytes""])).convert(""RGB"")
+ elif hasattr(img_data, ""convert""):
+ img = img_data.convert(""RGB"")
+ # Format messages
+ formatted = []
+ for j, msg in enumerate(batch[""messages""][i]):
+ if msg[""role""] == ""user"":
+ content = []
+ if img and j == 0: content.append({""type"": ""image"", ""image"": img})
+ txt = msg[""content""] if isinstance(msg[""content""], str) else next((x[""text""] for x in msg[""content""] if x.get(""type"")==""text""), """")
+ content.append({""type"": ""text"", ""text"": txt})
+ formatted.append({""role"": ""user"", ""content"": content})
+ else:
+ formatted.append({""role"": ""assistant"", ""content"": str(msg[""content""])})
+ train_items.append({""messages"": formatted, ""image"": img})
+ dataloader = DataLoader(VLMDataset(train_items, processor), batch_size=2, shuffle=True,
+ collate_fn=lambda b: collate_fn(b, processor), num_workers=0)
+ # Training loop
+ MAX_STEPS, GRAD_ACCUM = 20, 4
+ optimizer = torch.optim.AdamW([p for p in model.parameters() if p.requires_grad], lr=2e-4)
+ global_step, running_loss = 0, 0.0
+ optimizer.zero_grad()
+ while global_step < MAX_STEPS:
+ for batch_idx, batch in enumerate(dataloader):
+ if global_step >= MAX_STEPS: break
+ inputs = {k: v.to(device) if torch.is_tensor(v) else v for k, v in batch.items()}
+ loss = model(**inputs).loss / GRAD_ACCUM
+ running_loss += loss.item()
+ loss.backward()
+ if (batch_idx + 1) % GRAD_ACCUM == 0:
+ torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+ optimizer.step()
+ optimizer.zero_grad()
+ global_step += 1
+ if global_step % 10 == 0 and rank == 0:
+ print(f""Step {global_step}: loss = {running_loss/10:.4f}"")
+ mlflow.log_metrics({""train_loss"": running_loss/10}, step=global_step)
+ running_loss = 0.0
+ ray_train.report({""loss"": loss.item() * GRAD_ACCUM, ""step"": global_step})
+ # Save (all ranks participate, only rank 0 writes)
+ adapter_path = f""{config['checkpoint_dir']}/final_adapter""
+ os.makedirs(adapter_path, exist_ok=True)
+ with FSDP.state_dict_type(model, StateDictType.FULL_STATE_DICT,
+ FullStateDictConfig(offload_to_cpu=True, rank0_only=True)):
+ state_dict = model.state_dict() # ALL ranks must call this (collective)
+ if rank == 0:
+ torch.save(state_dict, f""{adapter_path}/adapter_model.bin"")
+ processor.save_pretrained(adapter_path)
+ mlflow.end_run()
+ # ========= Run Training ===========================
+ result = TorchTrainer(
+ train_loop_per_worker=train_worker,
+ train_loop_config={""experiment_name"": EXPERIMENT_NAME, ""checkpoint_dir"": CHECKPOINT_DIR},
+ scaling_config=ScalingConfig(num_workers=4, use_gpu=True, resources_per_worker={""GPU"": 1}),
+ run_config=RunConfig(name=""ray-data-fsdp"", storage_path=CHECKPOINT_DIR),
+ torch_config=TorchConfig(backend=""nccl""),
+ datasets={""train"": create_ray_dataset()},
+ ).fit()
+ return result
+train_func.distributed()",Full implementation of Ray fine-tuning of Qwen’s Vision-Language Model using FSDP
+25,{{CODE_0025}},11-2,23-11._MLflow_3_and_the_GenAI_Agents.md,python,"import mlflow
+mlflow.openai.autolog()",Auto-tracing for OpenAI library
+26,{{CODE_0026}},11-3,23-11._MLflow_3_and_the_GenAI_Agents.md,python,"from databricks_openai import DatabricksOpenAI
+# In Databricks notebooks, DatabricksOpenAI auto-configures auth and base_url
+client = DatabricksOpenAI()
+response = client.chat.completions.create(
+ model=""databricks-claude-opus-4-5"",
+ messages=[
+ {""role"": ""system"", ""content"": ""You are a chess master.""},
+ {""role"": ""user"", ""content"": ""What is the next best move? 1rb5/4r3/3p1npb/3kp1P1/1P3P1P/5nR1/2Q1BK2/bN4NR w - - 3 61""},
+ ],
+ max_tokens=5000,
+)
+print(response.choices[0].message.content)",OpenAI-compatible Chat Completions call (via the DatabricksOpenAI client) to Databricks Foundation Model APIs (FMAPI)
+27,{{CODE_0027}},11-4,23-11._MLflow_3_and_the_GenAI_Agents.md,,"mlflow.set_tracking_uri(""databricks"")
+mlflow.set_experiment(f""/Shared/llm-chess-game"")",Setting the experiment location for auto-tracing
+28,{{CODE_0028}},11-5,23-11._MLflow_3_and_the_GenAI_Agents.md,python,"with mlflow.start_span(name=""parse_response"") as span:
+ parser_input = parsers.TextParserInput(
+ text=response.main_response,
+ state_str=pyspiel_state.to_string(),
+ legal_moves=parsers.get_legal_action_strings(pyspiel_state),
+ player_number=pyspiel_state.current_player(),
+ )
+ parser_output = parser.parse(parser_input)
+ if parser_output is None:
+ print(colored(""Parser output is None, ending game."", ""red""))
+ else:
+ print(colored(f""Parser output is {parser_output}."", ""magenta""))
+ span.set_inputs({""parser_input"": parser_input})
+ span.set_outputs({""parser_output"": parser_output})",Example implementation of span tracing
+29,{{CODE_0029}},11-6,23-11._MLflow_3_and_the_GenAI_Agents.md,python,"from mlflow.genai.judges import make_judge
+from typing import Literal
+from mlflow.genai import log_trace
+move_correctness_judge = make_judge(
+ name=""move_correctness"",
+ instructions=(
+ ""Evaluate if the chess move predicted by the agent matches the expected correct move.\\n\\n""
+ ""Position (FEN): {{ inputs }}\\n""
+ ""Agent's predicted move: {{ outputs }}\\n""
+ ""Expected correct move: {{ expectations }}\\n\\n""
+ ""Consider that moves may be written slightly differently (e.g., 'Qxf7#' vs 'Qxf7') but mean the same thing.""
+ ),
+ feedback_value_type=Literal[""correct"", ""incorrect"", ""equivalent_move""],
+)
+# example log trace
+chess_position = ""r1bqkbnr/pppp1ppp/2n5/4p3/8/5N2/PPPPPPPP/RNBQKB1R w KQkq - 2 3""
+predicted_move = ""Qxf7"" # simulate LLM answer
+correct_move = ""Qxf7#""
+log_trace(
+ inputs=chess_position, # input to the model
+ outputs=predicted_move, # model prediction
+ expectations=correct_move # ground truth
+)",A judge that evaluates if the predicted move matches the expected move
+30,{{CODE_0030}},11-7,23-11._MLflow_3_and_the_GenAI_Agents.md,python,"import mlflow
+traces = mlflow.search_traces(location='<experiment-id>')
+results = mlflow.genai.evaluate(
+ data=traces,
+ scorers=[move_correctness_judge],
+)",Executing the judge against a list of traces
+31,{{CODE_0031}},11-8,23-11._MLflow_3_and_the_GenAI_Agents.md,python,"pgn_guideline = """"""
+The output must be a valid PGN string.
+1. Use Standard Algebraic Notation (SAN).
+2. Ensure move numbers are sequential.
+3. They cannot be illegal moves.
+""""""
+from mlflow.genai.scorers import Guidelines
+mlflow.genai.evaluate(
+ data=eval_dataset,
+ scorers=[
+ Guidelines(name=""pgn_validity"", guidelines=pgn_guideline),
+ ],
+)","Evaluate using guidelines, which are just plain English"
+32,{{CODE_0032}},11-9,23-11._MLflow_3_and_the_GenAI_Agents.md,python,"import dspy
+lm = dspy.LM(""databricks/databricks-claude-sonnet-4-5"", max_tokens=1500)
+dspy.configure(lm=lm)",Configuration of DSPy’s Language Model
+33,{{CODE_0033}},11-10,23-11._MLflow_3_and_the_GenAI_Agents.md,python,"class ChessMateInOne(dspy.Signature):
+ """"""Given a chess position in FEN notation, find the move that delivers checkmate in one move in UCI format.
+ """"""
+ fen: str = dspy.InputField(desc=""Chess position in FEN notation (white to move)"")
+ move: str = dspy.OutputField(desc=""ONLY the checkmate move in UCI notation (4-5 characters like 'h5f7')"")",Sample contract for checkmate in one move
+34,{{CODE_0034}},11-11,23-11._MLflow_3_and_the_GenAI_Agents.md,python,"class ChessSolver(dspy.Module):
+ """"""A module that uses Chain of Thought reasoning to find mate-in-one moves.""""""
+ Def __init__(self):
+ self.cot = dspy.ChainOfThought(ChessMateInOne)
+ def forward(self, fen: str) -> dspy.Prediction:
+ return self.cot(fen=fen)",Chess solver using ChainOfThought
+35,{{CODE_0035}},11-12,23-11._MLflow_3_and_the_GenAI_Agents.md,python,"solver = ChessSolver()
+# Quick test with one example
+sample = trainset[0]
+print(f""FEN: {sample.fen}"")
+print(f""Expected Move (UCI): {sample.move}"")
+result = solver(fen=sample.fen)
+print(f""Predicted Move (raw): '{result.move}'"")",Executing chess solver
+36,{{CODE_0036}},11-13,23-11._MLflow_3_and_the_GenAI_Agents.md,python,"def chess_move_metric(example: dspy.Example, pred: dspy.Prediction, trace=None) -> bool:
+ """"""Check if the predicted move matches the expected move.
+ """"""
+ expected_uci = example.move.strip().lower()
+ predicted_uci = pred.move.strip().lower()
+ # Direct match
+ if expected_uci == predicted_uci:
+ return True
+ # Handle promotion variations (e.g., 'a7a8q' vs 'a7a8')
+ if len(expected_uci) >= 4 and len(predicted_uci) >= 4:
+ if expected_uci[:4] == predicted_uci[:4]:
+ return True
+ return False",Chess move metric comparing the UCI moves
+37,{{CODE_0037}},11-14,23-11._MLflow_3_and_the_GenAI_Agents.md,,"optimizer = dspy.BootstrapFewShot(
+ metric=chess_move_metric,
+ max_bootstrapped_demos=num_demos,
+ max_labeled_demos=num_demos,
+ max_rounds=1,
+ )
+optimized_solver = optimizer.compile(solver, trainset=trainset)",BootstrapFewShot function definition
+38,{{CODE_0038}},12-1,24-12._Real-Time_Intelligence_with_Spark_Structured_Streaming.md,sql,"streamingDataFrame.writeStream
+ .format(""parquet"")
+ .option(""path"", ""/path/to/table"")
+ .option(""checkpointLocation"", ""/path/to/table/_checkpoint"")
+ .start()",Spark Streaming Checkpoint
+39,{{CODE_0039}},12-2,24-12._Real-Time_Intelligence_with_Spark_Structured_Streaming.md,python,"from pyspark.sql.functions import window
+(df
+ .withWatermark(""event_time"", ""10 minutes"")
+ .groupBy(
+ window(""event_time"", ""5 minutes""),
+ ""id"")
+ .count()
+)",Spark Streaming Watermark
+40,{{CODE_0040}},12-3,24-12._Real-Time_Intelligence_with_Spark_Structured_Streaming.md,python,"from pyspark.sql.functions import col, current_timestamp, from_json
+from pyspark.sql.streaming import StatefulProcessor, StatefulProcessorHandle
+from pyspark.sql.types import StructType, StructField, StringType, DoubleType, TimestampType
+import pandas as pd
+# Schema for the source data (e.g., from Kafka)
+input_schema = StructType([
+ StructField(""ticker"", StringType()),
+ StructField(""price"", DoubleType())
+])
+state_schema = StructType([
+ StructField(""current_high"", DoubleType()),
+ StructField(""current_low"", DoubleType())
+])
+output_schema = StructType([
+ StructField(""ticker"", StringType()),
+ StructField(""latest_price"", DoubleType()),
+ StructField(""day_high"", DoubleType()),
+ StructField(""day_low"", DoubleType()),
+ StructField(""updated_at"", TimestampType())
+])
+class IntradayStatsProcessor(StatefulProcessor):
+ def __init__(self, handle: StatefulProcessorHandle) -> None:
+ """"""
+ Initialize the state variable.
+ This runs once per partition on the executor.
+ """"""
+ # We use ValueState for simple high/low tracking
+ self.state_handle = handle.getValueState(""intraday_stats"", state_schema)
+ def handleInputRows(self, key, inputRows):
+ """"""
+ Process individual rows as they arrive.
+ :param key: The grouping key (ticker).
+ - inputRows: Iterator of rows for this key
+ """"""
+ # 1. Recover existing state from the state store (if any)
+ if self.state_handle.exists():
+ existing = self.state_handle.get()
+ current_high = existing[""current_high""]
+ current_low = existing[""current_low""]
+ else:
+ current_high = float('-inf')
+ current_low = float('inf')
+ # 2. Process the iterator of input rows for this specific ticker
+ results = []
+ for row in inputRows:
+ price = row[""price""]
+ # Update local variables
+ current_high = max(current_high, price)
+ current_low = min(current_low, price)
+ # Prepare the result rows for downstream
+ results.append((
+ key[""ticker""],
+ price,
+ current_high,
+ current_low,
+ pd.Timestamp.utcnow()
+ ))
+ # 3. Persist the updated state back to RocksDB
+ self.state_handle.update((current_high, current_low))
+ # 4. Yield the results to the output stream
+ yield pd.DataFrame(results, columns=output_schema.names)
+# Streaming pipeline
+raw_stream = spark.readStream \\
+ .format(""kafka"") \\
+ .option(""kafka.bootstrap.servers"", ""YOUR_KAFKA_BROKERS"") \\
+ .option(""subscribe"", ""stock_ticks"") \\
+ .load()
+stock_ticks_stream = raw_stream \\
+ .select(from_json(col(""value"").cast(""string""), input_schema).alias(""data"")) \\
+ .select(""data.*"")
+processed_stream = stock_ticks_stream \\
+ .groupBy(""ticker"") \\
+ .transformWithState(
+ IntradayStatsProcessor(),
+ outputStructType=output_schema,
+ outputMode=""Update"",
+ timeMode=""None""
+ )
+query = processed_stream.writeStream \\
+ .format(""delta"") \\
+ .outputMode(""Update"") \\
+ .option(""checkpointLocation"", ""/path/to/checkpoints/real_time_stock_stats"") \\
+ .trigger(realTime=""5 minutes"") \\
+ .table(""real_time_stock_analysis"")",Stock price tracking using transformWithState
+41,{{CODE_0041}},12-4,24-12._Real-Time_Intelligence_with_Spark_Structured_Streaming.md,python,"@on_demand_feature_view(
+sources=[stock_features], # Pre-computed features
+schema=[...])
+def realtime_stock_signals(stock_features, request_data):
+""""""Compute signals at prediction time.""""""
+price_vs_sma = request_data[""current_price""] / stock_features[""sma_20""]
+# Intraday volatility from request
+intraday_range = (request_data[""intraday_high""] - request_data[""intraday_low""]) / request_data[""intraday_low""]
+# Real-time momentum signal
+momentum = request_data[""current_price""] - stock_features[""prev_close""]
+return {...}",Code skeleton for real-time stock features
+42,{{CODE_0042}},13-1,25-13._Lakeflow_Connect__Data_Ingestion_for_the_Lakehouse.md,,"df = spark.
+ readStream.
+ format(""cloudFiles"") \\
+ .option(""cloudFiles.format"", ""json"") \\
+ .load(""<path-to-source-data>"") \\
+ .writeStream \\
+ .option(""maxFilesPerTrigger"", ""2000"") \\
+ .trigger(availableNow=True) \\
+ .option(""mergeSchema"", ""true"") \\
+ .option(""cloudFiles.inferColumnTypes"", ""true"") \\
+ .option(""checkpointLocation"", ""<path-to-checkpoint>"") \\
+ .start(""<path-to-target>"")",Auto Loader setup with streaming ingestion into Delta Lake
+43,{{CODE_0043}},13-2,25-13._Lakeflow_Connect__Data_Ingestion_for_the_Lakehouse.md,sql,"COPY INTO is a SQL command that lets you load data from cloud storage into a Delta table. It is considered legacy, and Databricks’ recommendation is to use Auto Loader instead when authoring new code. COPY INTO supports many common file formats, including JSON, CSV, Parquet, Avro, and text files. COPY INTO is idempotent by default. It maintains an internal state (often using a key-value store like RocksDB) to record and track the metadata of processed files, so files are processed only once. This saves time and reduces costs, as your ETL pipeline processes each file only once rather than performing a full load each time. Now, the COPY INTO command is perfect for scheduled or ad hoc ingestion use cases in which the data source has a small number of files, typically in the thousands. It is recommended that, for a larger number of files, the Auto Loader be used. COPY INTO supports target schema evolution, merging, mapping, and inference.
+COPY INTO requires a target table to exist, as it ingests the data into a target Delta table. If the ingestion is run for the first time, you need to create an empty Delta table beforehand, as shown in Listing [13-2](A625176_2_En_13_Chapter).
+DROP TABLE IF EXISTS test_table;
+CREATE TABLE test_table;",Creating an empty Delta table for COPY INTO ingestion
+44,{{CODE_0044}},13-3,25-13._Lakeflow_Connect__Data_Ingestion_for_the_Lakehouse.md,,"COPY INTO test_table
+FROM 's3://my-bucket/exampleData'
+FILEFORMAT = CSV
+VALIDATE
+FORMAT_OPTIONS ('header' = 'true', 'inferSchema' = 'true', 'mergeSchema' = 'true')
+COPY_OPTIONS ('mergeSchema' = 'true')",COPY INTO command with VALIDATE mode for data validation
+45,{{CODE_0045}},13-4,25-13._Lakeflow_Connect__Data_Ingestion_for_the_Lakehouse.md,,"COPY INTO test_table
+FROM 's3://my-bucket/exampleData'
+FILEFORMAT = CSV
+FORMAT_OPTIONS ('header' = 'true', 'inferSchema' = 'true', 'mergeSchema' = 'true')
+COPY_OPTIONS ('mergeSchema' = 'true')",COPY INTO command for actual data ingestion
+46,{{CODE_0046}},13-5,25-13._Lakeflow_Connect__Data_Ingestion_for_the_Lakehouse.md,,nslookup adb-xxxxxxxxxx.13.azuredatabricks.net,nslookup command
+47,{{CODE_0047}},13-6,25-13._Lakeflow_Connect__Data_Ingestion_for_the_Lakehouse.md,," Azure: canonical name = eastus-c3.azuredatabricks.net.
+ AWS: public-ingress-xxxxxx.elb.us-west-2.amazonaws.com",Partial output from nslookup
+48,{{CODE_0048}},13-7,25-13._Lakeflow_Connect__Data_Ingestion_for_the_Lakehouse.md,python,"sdk = ZerobusSdk(server_endpoint, workspace_url)
+table_properties = TableProperties(table_name)
+options = StreamConfigurationOptions(record_type=RecordType.JSON)
+stream = sdk.create_stream(client_id, client_secret, table_properties, options)
+try:
+ for i in range(100):
+ record = {""device_name"": f""sensor-{i}"", ""temp"": 22, ""humidity"": 55}
+ ack = stream.ingest_record(record)
+ ack.wait_for_ack()
+finally:
+ stream.close()",Sample Zerobus ingestion
+49,{{CODE_0049}},14-1,26-14._Open_Data_Governance_with_Unity_Catalog.md,,GRANT <privilege> ON <securable_type> <securable_name> TO <principal>,Generic GRANT syntax for Unity Catalog access control
+50,{{CODE_0050}},14-2,26-14._Open_Data_Governance_with_Unity_Catalog.md,sql,GRANT SELECT ON iot.events TO engineers,Example: Granting SELECT permission to the engineers group
+51,{{CODE_0051}},14-3,26-14._Open_Data_Governance_with_Unity_Catalog.md,sql,"CREATE FUNCTION <function_name> (<parameter_name> <parameter_type>, ...)
+RETURN {filter clause whose output must be a boolean};",Syntax for creating a row filter function
+52,{{CODE_0052}},14-4,26-14._Open_Data_Governance_with_Unity_Catalog.md,sql,"ALTER TABLE <table_name>
+SET ROW FILTER <function_name> ON (<column_name>, ...);",Syntax for applying a row filter to a table with column specification
+53,{{CODE_0053}},14-5,26-14._Open_Data_Governance_with_Unity_Catalog.md,sql,"CREATE OR REPLACE FUNCTION main.pii.us_filter(region STRING)
+RETURNS BOOLEAN
+RETURN IF(IS_ACCOUNT_GROUP_MEMBER('admin'), true, region = 'US');",Creating a region-based row filter function
+54,{{CODE_0054}},14-6,26-14._Open_Data_Governance_with_Unity_Catalog.md,sql,ALTER TABLE main.pii.sales SET ROW FILTER main.pii.us_filter ON (region);,Applying the ‘US’\_filter to the sales table
+55,{{CODE_0055}},14-7,26-14._Open_Data_Governance_with_Unity_Catalog.md,sql,"CREATE FUNCTION <function_name> (<parameter_name> <parameter_type>, ...)
+RETURN {expression with the same type as the first parameter};",Syntax for creating a column mask function
+56,{{CODE_0056}},14-8,26-14._Open_Data_Governance_with_Unity_Catalog.md,sql,ALTER TABLE <table_name> ALTER COLUMN <col_name> SET MASK <mask_func_name> [USING COLUMNS <additional_columns>];,Syntax for applying a column mask to a table
+57,{{CODE_0057}},14-9,26-14._Open_Data_Governance_with_Unity_Catalog.md,sql,"CREATE OR REPLACE FUNCTION main.pii.ssn_mask(ssn STRING) RETURN IF(IS_ACCOUNT_GROUP_MEMBER('admin'), ssn, '****');",Creating an SSN masking function
+58,{{CODE_0058}},14-10,26-14._Open_Data_Governance_with_Unity_Catalog.md,sql,ALTER TABLE main.pii.users ALTER COLUMN table_ssn SET MASK ssn_mask;,Applying the ssn\_mask to the users table
+59,{{CODE_0059}},14-11,26-14._Open_Data_Governance_with_Unity_Catalog.md,sql,"CREATE SHARE IF NOT EXISTS test_share
+ALTER SHARE test_share
+ADD TABLE test_table",Creating a share for Delta Sharing
+60,{{CODE_0060}},14-12,26-14._Open_Data_Governance_with_Unity_Catalog.md,sql,CREATE RECIPIENT IF NOT EXISTS recipient;,Creating a recipient for Delta Sharing
+61,{{CODE_0061}},15-1,27-15._Delta_Lake__The_Foundation_of_Reliable_Data_and_AI.md,sql,"MERGE INTO target
+USING source
+ON source.key = target.key
+WHEN MATCHED THEN
+UPDATE SET *
+WHEN NOT MATCHED THEN
+INSERT *
+WHEN NOT MATCHED BY SOURCE THEN
+DELETE",MERGE statement
+62,{{CODE_0062}},15-2,27-15._Delta_Lake__The_Foundation_of_Reliable_Data_and_AI.md,sql,SELECT * FROM employee_delta VERSION AS OF 2,Time travel queries
+63,{{CODE_0063}},15-3,27-15._Delta_Lake__The_Foundation_of_Reliable_Data_and_AI.md,sql,CREATE OR REPLACE TABLE db.target_table CLONE db.source_table,Deep clone syntax
+64,{{CODE_0064}},15-4,27-15._Delta_Lake__The_Foundation_of_Reliable_Data_and_AI.md,sql,CREATE OR REPLACE TABLE my_test SHALLOW CLONE my_prod_table;,Shallow clone syntax
+65,{{CODE_0065}},15-5,27-15._Delta_Lake__The_Foundation_of_Reliable_Data_and_AI.md,sql,"CREATE TABLE uniform.test.T (name STRING, age INT) TBLPROPERTIES(
+'delta.enableIcebergCompatV2' = 'true',
+'delta.universalFormat.enabledFormats' = 'iceberg');",Enabling Uniform in a Unity Catalog table
+66,{{CODE_0066}},15-6,27-15._Delta_Lake__The_Foundation_of_Reliable_Data_and_AI.md,sql,"CREATE TABLE table_name
+USING delta
+PARTITIONED BY (column_name)
+ALTER TABLE table_name ADD PARTITION (column_name = 'value')",Create or Alter table syntax
+67,{{CODE_0067}},15-7,27-15._Delta_Lake__The_Foundation_of_Reliable_Data_and_AI.md,sql,"CREATE TABLE table1(col0 int, col1 string) USING DELTA CLUSTER BY (col0);
+CREATE EXTERNAL TABLE table2 CLUSTER BY (col0)
+LOCATION 'table_location'
+AS SELECT * FROM table1;
+OPTIMIZE table2;",End-to-end example running the OPTIMIZE command
+68,{{CODE_0068}},15-8,27-15._Delta_Lake__The_Foundation_of_Reliable_Data_and_AI.md,sql,"-- Using a LIKE statement to copy configurations
+CREATE TABLE table3 LIKE table1;
+-- Change the cluster key
+ALTER TABLE table_name CLUSTER BY (new_column1, new_column2);
+-- Cluster by AUTO
+ALTER TABLE table_name CLUSTER BY AUTO;
+-- Disable the cluster key
+ALTER TABLE table_name CLUSTER BY NONE;",Other commands for liquid clustering
+69,{{CODE_0069}},16-1,28-16._Lakeflow_Declarative_Pipelines__Managing_Data_and_AI_Workflows.md,sql,"CREATE OR REFRESH STREAMING TABLE loan_bronze
+AS
+SELECT * FROM cloud_files('/demos/dp/loans/raw_transactions', 'json', map(""cloudFiles.inferColumnTypes"", ""true""))",Creating a streaming table from a cloud storage source
+70,{{CODE_0070}},16-2,28-16._Lakeflow_Declarative_Pipelines__Managing_Data_and_AI_Workflows.md,python,"@dp.table
+def sales():
+ return (
+ (spark.readStream
+ .format(""kafka"")
+ .option(""subscribe"", 'sales_trends')
+ .option(""kafka.bootstrap.servers"", kafka_bootstrap_servers_tls)
+ .option(""kafka.security.protocol"", ""SSL"")
+ .option(""startingOffsets"", ""earliest"")
+ .load()).select(col(""key"").cast(""string"").alias(""eventId""), from_json(col(""value"").cast(""string""), behavioral_input_schema).alias(""json""))
+ )",Data ingestion from Kafka
+71,{{CODE_0071}},16-3,28-16._Lakeflow_Declarative_Pipelines__Managing_Data_and_AI_Workflows.md,sql,"CREATE OR REFRESH STREAMING TABLE raw_payment_events
+AS SELECT * FROM read_kafka(
+ bootstrapServers => ""<server:ip>"",
+ subscribe => ""payments"",
+ startingOffsets => ""earliest""
+);",Ingesting raw Kafka events
+72,{{CODE_0072}},16-4,28-16._Lakeflow_Declarative_Pipelines__Managing_Data_and_AI_Workflows.md,sql,"-- SCD Type 1
+-- Next, define the flow to manage deduplication and sequencing
+CREATE FLOW compute_risk_features
+AS AUTO CDC INTO payment_risk_features
+FROM stream(raw_payment_events)
+KEYS (event_id)
+SEQUENCE BY event_timestamp
+APPLY AS DELETE WHEN operation_type = ""VOID""
+COLUMNS * EXCEPT (_rescued_data, kafka_partition, kafka_offset);
+-- SCD Type 2
+CREATE FLOW compute_risk_features_scd2
+AS AUTO CDC INTO payment_risk_features
+FROM stream(raw_payment_events)
+KEYS (event_id)
+SEQUENCE BY event_timestamp
+APPLY AS DELETE WHEN operation_type = ""VOID""
+COLUMNS * EXCEPT (_rescued_data, kafka_partition, kafka_offset)
+STORED AS SCD TYPE 2;",Defining the feature engineering flow
+73,{{CODE_0073}},16-5,28-16._Lakeflow_Declarative_Pipelines__Managing_Data_and_AI_Workflows.md,sql,CONSTRAINT valid_event_id EXPECT (event_id IS NOT NULL) ON VIOLATION DROP ROW;,Applying data quality rules
+74,{{CODE_0074}},16-6,28-16._Lakeflow_Declarative_Pipelines__Managing_Data_and_AI_Workflows.md,sql,"AS SELECT
+ user_id,
+ window(event_timestamp, ""1 hour"") as time_window,
+ count(transaction_id) as txn_count_1h,
+ sum(amount) as total_spend_1h,
+ avg(amount) as avg_spend_1h,
+ max(amount) as max_spend_1h
+FROM
+ live.payment_risk_features
+GROUP BY
+ user_id,
+ window(event_timestamp, ""1 hour"");",Creating a gold materialized view
+75,{{CODE_0075}},17-1,29-17._Data_Warehousing_with_Databricks_SQL.md,sql,"CREATE TABLE T1 (
+id INT NOT NULL,
+quantity INT,
+date DATE,
+CONSTRAINT chk_quantity CHECK (quantity > 0)
+);",Create a table statement with a CHECK constraint
+76,{{CODE_0076}},17-2,29-17._Data_Warehousing_with_Databricks_SQL.md,sql,ALTER TABLE T1 ADD CONSTRAINT dateWithinRange CHECK (Date > '1900-01-01');,Alter table statement with CHECK constraint
+77,{{CODE_0077}},17-3,29-17._Data_Warehousing_with_Databricks_SQL.md,sql,"--STORE DIMENSION
+CREATE OR REPLACE TABLE dim_store(
+ store_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+ store_name STRING,
+ address STRING
+);
+--PRODUCT DIMENSION
+CREATE OR REPLACE TABLE dim_product(
+ product_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+ sku STRING,
+ description STRING,
+ category STRING
+);
+--CUSTOMER DIMENSION
+CREATE OR REPLACE TABLE dim_customer(
+ customer_id BIGINT GENERATED ALWAYS AS IDENTITY (START WITH 0 INCREMENT BY 10) PRIMARY KEY,
+ customer_name STRING,
+ customer_profile STRING,
+ address STRING
+);
+CREATE OR REPLACE TABLE fact_sales(
+ sales_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+ product_id BIGINT NOT NULL CONSTRAINT dim_product_fk FOREIGN KEY REFERENCES dim_product,
+ store_id BIGINT NOT NULL CONSTRAINT dim_store_fk FOREIGN KEY REFERENCES dim_store,
+ customer_id BIGINT NOT NULL CONSTRAINT dim_customer_fk FOREIGN KEY REFERENCES dim_customer,
+ price_sold DOUBLE,
+ units_sold INT,
+ dollar_cost DOUBLE
+);",Creating primary keys and foreign keys in Delta tables
+78,{{CODE_0078}},17-4,29-17._Data_Warehousing_with_Databricks_SQL.md,sql,"CREATE OR REFRESH STREAMING TABLE mystream
+ AS SELECT * FROM STREAM read_files('s3://<bucket>/<path>/<folder>')",Creating a streaming table
+79,{{CODE_0079}},17-5,29-17._Data_Warehousing_with_Databricks_SQL.md,sql,"CREATE OR REFRESH STREAMING TABLE mystream
+AS
+SELECT * FROM STREAM read_files('s3://<bucket>/<path>/<folder>',, includeExistingFiles => false
+)",Streaming table with includeExistingFiles flag
+80,{{CODE_0080}},17-6,29-17._Data_Warehousing_with_Databricks_SQL.md,sql,"SELECT * FROM STREAM read_kafka(
+ bootstrapServers => '<server:port>',
+ subscribe => '<topic>',
+ startingOffsets => 'latest'
+);",Reading from a streaming source
+81,{{CODE_0081}},17-7,29-17._Data_Warehousing_with_Databricks_SQL.md,sql,"CREATE MATERIALIZED VIEW mv1
+AS SELECT
+date, sum(sales) AS sum_of_sales
+FROM
+table1
+GROUP BY
+date;",Creating a materialized view
+82,{{CODE_0082}},17-8,29-17._Data_Warehousing_with_Databricks_SQL.md,sql,"CREATE OR REPLACE MATERIALIZED VIEW catalog.schema.hourly_metrics
+ SCHEDULE EVERY 1 HOUR
+AS SELECT
+ date_trunc('hour', event_time) AS hour,
+ count(*) AS events
+FROM catalog.schema.raw_events
+GROUP BY 1;
+REFRESH MATERIALIZED VIEW mv1;",Scheduling and manual refresh of a materialized view
+83,{{CODE_0083}},17-9,29-17._Data_Warehousing_with_Databricks_SQL.md,sql,"CREATE OR REPLACE MATERIALIZED VIEW catalog.schema.hourly_metrics
+ TRIGGER ON UPDATE
+AS SELECT
+ date_trunc('hour', event_time) AS hour,
+ count(*) AS events
+FROM catalog.schema.raw_events
+GROUP BY 1;",Triggering updates when data source changes
+84,{{CODE_0084}},17-10,29-17._Data_Warehousing_with_Databricks_SQL.md,sql,"SELECT text, ai_query(
+ ""sentiment-analysis"",
+ text,
+ returnType => ""STRUCT<label:STRING, score:DOUBLE>""
+ ) AS predict
+FROM
+catalog.schema.customer_reviews",Specifying a return type in ai\_query
+85,{{CODE_0085}},18-1,30-18._Databricks_Pricing_and_Observability_Using_System_Tables.md,sql,"SELECT compute.warehouse_id, SUM(waiting_for_compute_duration_ms) AS queueing_ms
+FROM system.query.history
+WHERE start_time BETWEEN '2026-02-01' AND '2026-04-01'
+GROUP BY ALL HAVING queueing_ms > 0
+ORDER BY 2 DESC;",Example query to monitor a warehouse performance
+86,{{CODE_0086}},19-1,31-19._From_Ideation_to_Creation__Building_Intelligent_Products_with_GenAI.md,python,"from datasets import load_dataset
+dataset = load_dataset(""minwoosun/CholecSeg8k"")",Loading the CholecSeg8k dataset
+87,{{CODE_0087}},19-2,31-19._From_Ideation_to_Creation__Building_Intelligent_Products_with_GenAI.md,,"fs = HfFileSystem()
+hf_zip_path = ""datasets/minwoosun/CholecSeg8k/data/CholecSeg8k.zip""
+zip_file = fs.open(hf_zip_path, 'rb')",Opening a zip file from Hugging Face
+88,{{CODE_0088}},19-3,31-19._From_Ideation_to_Creation__Building_Intelligent_Products_with_GenAI.md,python,"import numpy as np
+from scipy.ndimage import binary_dilation
+def generate_detection_text(mask_image) -> str:
+ """"""Convert segmentation mask to bounding box text format.""""""
+ try:
+ # Handle dict format from Hugging Face datasets
+ if isinstance(mask_image, dict):
+ if ""bytes"" in mask_image and mask_image[""bytes""]:
+ mask_image = Image.open(BytesIO(mask_image[""bytes""]))
+ elif ""path"" in mask_image and mask_image[""path""]:
+ mask_image = Image.open(mask_image[""path""])
+ mask_array = np.array(mask_image.convert(""L""))
+ unique_ids = np.unique(mask_array)
+ height, width = mask_array.shape
+ detected_objects = []
+ masks_by_id = {uid: (mask_array == uid) for uid in unique_ids if uid in CHOLEC_CLASSES}
+ for uid in unique_ids:
+ if uid == 0 or uid not in CHOLEC_CLASSES:
+ continue
+ current_mask = masks_by_id[uid]
+ rows, cols = np.where(current_mask)
+ if len(rows) == 0:
+ continue
+ class_name = CHOLEC_CLASSES[uid]
+ # Compute bounding box scaled to [0, 1000] range
+ y1 = int((rows.min() / height) * 1000)
+ y2 = int((rows.max() / height) * 1000)
+ x1 = int((cols.min() / width) * 1000)
+ x2 = int((cols.max() / width) * 1000)
+ # Detect tool-organ interactions
+ interaction = """"
+ if uid in TOOLS:
+ structure = np.ones((21, 21), dtype=bool)
+ dilated = binary_dilation(current_mask, structure=structure)
+ for organ_id in ORGANS:
+ if organ_id in masks_by_id and np.any(dilated & masks_by_id[organ_id]):
+ interaction = f"" interacting with {CHOLEC_CLASSES[organ_id]}""
+ break
+ obj_str = f""{class_name} <loc{y1:04d}><loc{x1:04d}><loc{y2:04d}><loc{x2:04d}>{interaction}""
+ detected_objects.append(obj_str)
+ return ""\\n"".join(detected_objects) if detected_objects else ""No objects detected.""
+ except Exception as e:
+ logger.error(f""Error generating detection text: {e}"")
+ return ""Error processing mask.""",Extracting bounding boxes and detecting tool-organ interactions
+89,{{CODE_0089}},19-4,31-19._From_Ideation_to_Creation__Building_Intelligent_Products_with_GenAI.md,python,"class SurgicalVLMWrapper(mlflow.pyfunc.PythonModel):
+ """"""MLflow PyFunc wrapper for Surgical VLM""""""
+ def __init__(self, model=None, processor=None, model_path=None):
+ self.model = model
+ self.processor = processor
+ self.model_path = model_path
+ self.device = None
+ def load_context(self, context):
+ from transformers import Qwen3VLForConditionalGeneration, AutoProcessor
+ from peft import PeftModel
+ import json
+ model_path = context.artifacts.get(""model_path"")
+ if torch.cuda.is_available():
+ self.device = ""cuda""
+ else:
+ self.device = ""cpu""
+ self.processor = AutoProcessor.from_pretrained(model_path, trust_remote_code=True)
+ adapter_config_path = Path(model_path) / ""adapter_config.json""
+ if adapter_config_path.exists():
+ with open(adapter_config_path) as f:
+ adapter_config = json.load(f)
+ base_model_name = adapter_config.get(""base_model_name_or_path"", ""Qwen/Qwen3-VL-2B-Instruct"")
+ base_model = Qwen3VLForConditionalGeneration.from_pretrained(
+ base_model_name,
+ device_map=""auto"" if self.device == ""cuda"" else None,
+ trust_remote_code=True,
+ torch_dtype=torch.float16 if self.device != ""cpu"" else torch.float32,
+ )
+ self.model = PeftModel.from_pretrained(base_model, model_path)
+ else:
+ self.model = Qwen3VLForConditionalGeneration.from_pretrained(
+ model_path,
+ device_map=""auto"" if self.device == ""cuda"" else None,
+ trust_remote_code=True,
+ torch_dtype=torch.float16 if self.device != ""cpu"" else torch.float32,
+ )
+ self.model.eval()
+ def predict(self, context, model_input):
+ import re
+ import base64
+ # System prompt MUST match training prompt
+ system_prompt = """"""Detect surgical objects. Output format:
+<ClassName> <loc####><loc####><loc####><loc####>
+Classes: Liver, Gallbladder, Grasper, L-hook Electrocautery, Fat, Cystic Duct, Blood, Connective Tissue, Abdominal Wall, Gastrointestinal Tract, Hepatic Vein, Liver Ligament
+Coords: 4-digit (0000-1000) as y1,x1,y2,x2. Tools add: interacting with <Organ>""""""
+ user_prompt = ""Detect all surgical instruments and anatomical structures. Provide precise bounding box coordinates.""
+ ... omitted for brevity ...
+ return pd.DataFrame(results)",Partial code for SurgicalVLMWrapper
+90,{{CODE_0090}},19-5,31-19._From_Ideation_to_Creation__Building_Intelligent_Products_with_GenAI.md,sql,"# Create wrapper
+wrapper = SurgicalVLMWrapper(model=model, processor=processor, model_path=final_dir)
+# Define signature
+input_schema = Schema([ColSpec(""string"", ""image_path"")])
+output_schema = Schema([ColSpec(""string"", ""raw_text""), ColSpec(""string"", ""detections"")])
+signature = ModelSignature(inputs=input_schema, outputs=output_schema)
+# Example input
+input_example = pd.DataFrame({""image_path"": [""/path/to/surgical_image.png""]})
+# Log model as PyFunc
+mlflow.pyfunc.log_model(
+ artifact_path=""surgical-vlm"",
+ python_model=wrapper,
+ artifacts={""model_path"": final_dir},
+ pip_requirements=[
+ ""torch>=2.0.0"",
+ ""transformers>=4.37.0"",
+ ""accelerate>=0.26.0"",
+ ""peft>=0.7.0"",
+ ""qwen-vl-utils"",
+ ""pillow>=9.0.0"",
+ ""pandas>=1.5.0"",
+ ],
+ input_example=input_example,
+ signature=signature
+)
+run_id = mlflow.active_run().info.run_id
+model_uri = f""runs:/{run_id}/surgical-vlm""
+mlflow.set_registry_uri(""databricks-uc"")
+registered_model = mlflow.register_model(model_uri, REGISTERED_MODEL_NAME)",Logging and registering the PyFunc model to UC
+91,{{CODE_0091}},19-6,31-19._From_Ideation_to_Creation__Building_Intelligent_Products_with_GenAI.md,python,"def batch_decode(model, processor, images, batch_size=8, max_new_tokens=512):
+ """"""
+ Perform batch inference on multiple images
+ """"""
+ # System prompt (must match training)
+ system_prompt = """"""Detect surgical objects. Output format:
+<ClassName> <loc####><loc####><loc####><loc####>
+Classes: Liver, Gallbladder, Grasper, L-hook Electrocautery, Fat, Cystic Duct, Blood, Connective Tissue, Abdominal Wall, Gastrointestinal Tract, Hepatic Vein, Liver Ligament
+Coords: 4-digit (0000-1000) as y1,x1,y2,x2. Tools add: interacting with <Organ>""""""
+ user_prompt = ""Detect all surgical instruments and anatomical structures. Provide precise bounding box coordinates.""
+ # Prepare all messages at once (vectorized)
+ messages_batch = [
+ [
+ {""role"": ""system"", ""content"": system_prompt},
+ {""role"": ""user"", ""content"": [
+ {""type"": ""image"", ""image"": img},
+ {""type"": ""text"", ""text"": user_prompt}
+ ]}
+ ]
+ for img in images
+ ]
+ # Apply chat template to all messages at once
+ texts = [
+ processor.apply_chat_template(msgs, tokenize=False, add_generation_prompt=True)
+ for msgs in messages_batch
+ ]
+ # Process all images and texts in one batch
+ inputs = processor(
+ text=texts,
+ images=images,
+ return_tensors=""pt"",
+ padding=True
+ ).to(model.device)
+ # Generate predictions for entire batch in parallel
+ with torch.no_grad():
+ output_ids = model.generate(
+ **inputs,
+ max_new_tokens=max_new_tokens,
+ do_sample=False
+ )
+ # Decode all predictions at once
+ predictions = processor.batch_decode(
+ output_ids[:, inputs.input_ids.shape[1]:],
+ skip_special_tokens=True
+ )
+ return predictions",Batch inference function
