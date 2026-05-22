@@ -1,0 +1,19 @@
+# Core LangGraph dependencies
+langgraph>=0.2.0
+langchain-core>=0.3.0
+
+# LLM providers
+databricks-langchain
+
+# Tools
+langchain-tavily>=0.2.0
+
+# Visualization dependencies (optional)
+pillow>=10.0.0
+
+# Jupyter notebook support
+jupyter>=1.0.0
+ipykernel>=6.25.0
+
+# Development and testing
+python-dotenv>=1.0.0

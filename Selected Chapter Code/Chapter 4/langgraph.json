@@ -1,0 +1,18 @@
+{
+  "dependencies": [
+    "langchain-anthropic",
+    "langchain-tavily",
+    "langchain-community",
+    "langgraph",
+    "databricks-langchain"
+  ],
+  "graphs": {
+    "chatbot_with_tools": "./graph_with_tools.py:app",
+    "reflection": "./reflection.py:app",
+    "plan_and_execute": "./plan_and_execute.py:app",
+    "hierarchical_agent_teams": "./hierarchical_agent_teams.py:app",
+    "multi_agent_collaboration": "./multi_agent_collaboration.py:app",
+    "react_agent": "./react_agent.py:app"
+  },
+  "env": ".env"
+}
