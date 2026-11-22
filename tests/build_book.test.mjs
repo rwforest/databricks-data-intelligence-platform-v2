@@ -1,0 +1,25 @@
+import assert from "node:assert/strict";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import test from "node:test";
+import { buildBook } from "../tools/build_book.mjs";
+
+const root=path.resolve(import.meta.dirname,"..");
+
+test("book build contains every chapter and resolves local images",()=>{
+  const output=fs.mkdtempSync(path.join(os.tmpdir(),"book-addon-"));
+  buildBook(output);
+  const book=JSON.parse(fs.readFileSync(path.join(output,"book.json"),"utf8"));
+  assert.equal(book.schemaVersion,1);
+  assert.equal(book.chapters.length,32);
+  const imageRefs=book.chapters.flatMap(chapter=>[...chapter.html.matchAll(/<img src="([^"]+)"/g)].map(match=>match[1]));
+  assert.ok(imageRefs.length>250);
+  for(const reference of imageRefs){
+    if(/^https?:/.test(reference)) continue;
+    assert.ok(fs.existsSync(path.resolve(output,reference)),reference);
+  }
+  const unresolved=book.chapters.flatMap(chapter=>[...chapter.html.matchAll(/href="([^"]+)"/g)].map(match=>match[1])).filter(reference=>!reference.startsWith("?")&&!reference.startsWith("#")&&!/^(https?:|mailto:)/.test(reference));
+  assert.deepEqual(unresolved,[]);
+  assert.ok(book.chapters.every(chapter=>!/<script\b|\son\w+=|javascript:/i.test(chapter.html)));
+});

@@ -1,0 +1,61 @@
+name: Build and deploy the book add-on
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "17 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+env:
+  ARCHITECTURE_REPOSITORY: ${{ vars.ARCHITECTURE_REPOSITORY || 'databricks-industry-solutions/databricks-reference-architecture' }}
+  ARCHITECTURE_REF: ${{ vars.ARCHITECTURE_REF || 'main' }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - name: Build book
+        run: npm run build -- "$RUNNER_TEMP/book"
+      - name: Fetch architecture UI
+        run: git clone --depth 1 --branch "$ARCHITECTURE_REF" "https://github.com/$ARCHITECTURE_REPOSITORY.git" "$RUNNER_TEMP/architecture"
+      - name: Assemble site
+        run: python3 tools/assemble_site.py "$RUNNER_TEMP/architecture" "$RUNNER_TEMP/book" _site
+      - name: Validate upstream UI
+        working-directory: _site
+        run: |
+          npm install
+          npx playwright install --with-deps chromium
+          node tools/smoke_ui.js
+          node tools/launch_gate.js
+          node tools/smoke_addon.js
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4

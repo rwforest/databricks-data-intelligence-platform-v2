@@ -2,6 +2,22 @@
 
 Welcome to the repository for the **GenAI Book**. This repository contains the markdown chapters detailing enterprise architectures, Agentic AI, LangGraph, and MLflow 3.0 on the Databricks Platform.
 
+## Interactive Architecture Add-on
+
+This repository can publish the book as a searchable reader inside the [Databricks Reference Architecture](https://github.com/databricks-industry-solutions/databricks-reference-architecture). The integration uses a same-origin add-on manifest and iframe, so the book does not depend on the architecture UI's internal markup or JavaScript.
+
+- Run `npm install && npm test` to validate all chapters, images, and integration assembly.
+- Run `npm run build` to generate the standalone reader in `dist/book`.
+- Run `python3 tools/assemble_site.py <architecture-repo> dist/book dist/site` to build the combined site.
+- Enable GitHub Pages with **GitHub Actions** as its source; `.github/workflows/pages.yml` deploys book changes and checks upstream updates every Monday.
+- While the generic host PR is pending, set the repository variables `ARCHITECTURE_REPOSITORY` and `ARCHITECTURE_REF` to the temporary fork and branch. Remove those overrides after the host contract merges upstream.
+
+The upstream contribution consists only of `integration/addon-host.js`, `integration/addon-host.css`, and the two tags inserted idempotently by `integration/apply_host.py`. If no `/app/addons/manifest.json` exists, the reference architecture behaves exactly as before.
+
+![The book reader opened beside the Databricks Reference Architecture](docs/book-addon-overview.png)
+
+![Full-text book search results for Unity Catalog](docs/book-addon-search.png)
+
 ## 🌟 Praise for the Book
 
 > In this book, Yip provides a great (and practical) technical blueprint for bringing Lakehouse foundations to the GenAI and Agentic era. A lot has happened since his last book, from Agent Bricks to the new Lakebase/OLTP architecture, and he provides a comprehensive resource with the practical focus of someone who works on the platform daily, doing the real, hard work. 

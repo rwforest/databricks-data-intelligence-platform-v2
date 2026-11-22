@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Databricks Data Intelligence Platform</title>
+  <link rel="stylesheet" href="reader.css">
+</head>
+<body>
+  <header class="reader-header">
+    <button id="nav-toggle" class="icon-button" type="button" aria-label="Show chapters" aria-expanded="false">☰</button>
+    <div class="reader-title">
+      <strong>Databricks Data Intelligence Platform</strong>
+      <span>Powering the Agentic Era</span>
+    </div>
+    <label class="search-box">
+      <span class="sr-only">Search the book</span>
+      <input id="search" type="search" placeholder="Search the book" autocomplete="off">
+    </label>
+  </header>
+  <div class="reader-layout">
+    <nav id="chapters" class="chapters" aria-label="Book chapters"></nav>
+    <main id="content" class="content" tabindex="-1">
+      <div id="loading" class="loading">Loading the book…</div>
+    </main>
+    <aside id="results" class="results" aria-label="Search results" hidden></aside>
+  </div>
+  <div id="nav-scrim" class="nav-scrim" hidden></div>
+  <script src="reader.js"></script>
+</body>
+</html>
