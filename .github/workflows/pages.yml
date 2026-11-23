@@ -43,8 +43,8 @@ jobs:
           npm install
           npx playwright install --with-deps chromium
           node tools/smoke_ui.js
-          node tools/launch_gate.js
           node tools/smoke_addon.js
+          rm -rf node_modules
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
