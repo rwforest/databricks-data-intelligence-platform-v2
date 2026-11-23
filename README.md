@@ -2,6 +2,22 @@
 
 Welcome to the repository for the **GenAI Book**. This repository contains the markdown chapters detailing enterprise architectures, Agentic AI, LangGraph, and MLflow 3.0 on the Databricks Platform.
 
+## Interactive Architecture Add-on
+
+This repository maps the book back to the [Databricks Reference Architecture](https://github.com/databricks-industry-solutions/databricks-reference-architecture). Selecting an architecture component puts a prioritized **From the book** section at the top of its detail panel, ahead of documentation, articles, demos, and videos. Results map to relevant subsection headings rather than whole chapters. Hovering or focusing reveals a concise preview in place; opening the passage is optional. The integration uses a same-origin add-on manifest and iframe, so book code remains isolated from the architecture renderer.
+
+- Run `npm install && npm test` to validate all chapters, images, and integration assembly.
+- Run `npm run build` to generate the standalone reader in `dist/book`.
+- Run `python3 tools/assemble_site.py <architecture-repo> dist/book dist/site` to build the combined site.
+- Enable GitHub Pages with **GitHub Actions** as its source; `.github/workflows/pages.yml` deploys book changes and checks upstream updates every Monday.
+- While the generic host PR is pending, set the repository variables `ARCHITECTURE_REPOSITORY` and `ARCHITECTURE_REF` to the temporary fork and branch. Remove those overrides after the host contract merges upstream.
+
+The upstream contribution consists only of `integration/addon-host.js`, `integration/addon-host.css`, and the two tags inserted idempotently by `integration/apply_host.py`. If no `/app/addons/manifest.json` exists, the reference architecture behaves exactly as before.
+
+![Unity Catalog detail panel mapped to three relevant passages from the book](docs/book-addon-overview.png)
+
+![A single Unity Catalog passage opened beside the architecture](docs/book-addon-search.png)
+
 ## 🌟 Praise for the Book
 
 > In this book, Yip provides a great (and practical) technical blueprint for bringing Lakehouse foundations to the GenAI and Agentic era. A lot has happened since his last book, from Agent Bricks to the new Lakebase/OLTP architecture, and he provides a comprehensive resource with the practical focus of someone who works on the platform daily, doing the real, hard work. 

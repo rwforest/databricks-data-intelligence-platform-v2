@@ -4,3 +4,7 @@ META-INF/
 mimetype
 .DS_Store
 book_content_fixed/
+node_modules/
+dist/
+__pycache__/
+*.pyc
