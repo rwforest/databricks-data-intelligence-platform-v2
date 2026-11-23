@@ -13,6 +13,7 @@ test("book build contains every chapter and resolves local images",()=>{
   const book=JSON.parse(fs.readFileSync(path.join(output,"book.json"),"utf8"));
   assert.equal(book.schemaVersion,1);
   assert.equal(book.chapters.length,32);
+  assert.ok(book.chapters.some(chapter=>chapter.sections.some(section=>section.depth>1)));
   const sectionHtml=book.chapters.flatMap(chapter=>chapter.sections.map(section=>section.html));
   const imageRefs=sectionHtml.flatMap(html=>[...html.matchAll(/<img src="([^"]+)"/g)].map(match=>match[1]));
   assert.ok(imageRefs.length>250);

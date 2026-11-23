@@ -23,6 +23,7 @@
     if(!book||!context||!context.name)return [];
     const name=normalize(context.name);const phrases=[name,...(aliases[name]||[])].filter(Boolean);const queryWords=words(phrases.join(" ")+" "+context.section+" "+context.tagline);const matches=[];
     for(const chapter of book.chapters)for(const section of chapter.sections){
+      if(section.depth===1)continue;
       const chapterTitle=normalize(chapter.title),sectionTitle=normalize(section.title),text=normalize(section.text);let score=0;
       for(const phrase of phrases){if(sectionTitle.includes(phrase))score+=70;if(chapterTitle.includes(phrase))score+=50;if(text.includes(phrase))score+=12}
       for(const word of queryWords){if(sectionTitle.includes(word))score+=10;if(chapterTitle.includes(word))score+=7;if(text.includes(word))score+=1}
@@ -56,7 +57,7 @@
     body.dataset.bookContext=signature;currentContext=context;currentMatches=rank(context);body.querySelectorAll(".addon-context-card").forEach(node=>node.remove());
     if(!currentMatches.length){sendContext();return}
     const card=document.createElement("section");card.className="addon-context-card";const heading=document.createElement("h4");heading.textContent="From the book";card.append(heading);
-    for(const match of currentMatches){const button=document.createElement("button");button.type="button";button.className="addon-context-link";button.innerHTML="<strong></strong><span></span>";button.querySelector("strong").textContent=match.sectionTitle;button.querySelector("span").textContent=match.chapterTitle;button.addEventListener("click",()=>open(contextAddon,contextButton,match));card.append(button)}
+    for(const match of currentMatches){const button=document.createElement("button");button.type="button";button.className="addon-context-link";button.innerHTML="<strong></strong><span></span><em></em><b>Open passage →</b>";button.querySelector("strong").textContent=match.sectionTitle;button.querySelector("span").textContent=match.chapterTitle;button.querySelector("em").textContent=match.excerpt;button.addEventListener("click",()=>open(contextAddon,contextButton,match));card.append(button)}
     body.append(card);sendContext();
   }
 

@@ -15,7 +15,9 @@ function check(name,value,detail){checks.push(!!value);console.log((value?'PASS 
     const unity=page.locator('.atom:visible').filter({hasText:'Unity Catalog'}).first();await unity.click();
     await page.locator('.addon-context-link').first().waitFor();
     const labels=await page.locator('.addon-context-link').allTextContents();
-    check('the selected architecture box gets mapped book passages',labels.length>0&&labels.join(' ').includes('Unity Catalog'),labels.join(' | '));
+    check('the selected architecture box gets mapped to subsections',labels.length>0&&labels.join(' ').includes('Unity Catalog')&&!labels[0].startsWith('14. Open Data Governance'),labels.join(' | '));
+    await page.locator('.addon-context-link').first().hover();
+    check('hover reveals a concise book preview',await page.locator('.addon-context-link em').first().isVisible());
     await page.locator('.addon-context-link').first().click();
     const frame=page.frameLocator('.addon-shell iframe');await frame.locator('.passage').waitFor();
     check('only the selected passage opens',await frame.locator('.chapters').count()===0&&await frame.locator('.passage').count()===1);
