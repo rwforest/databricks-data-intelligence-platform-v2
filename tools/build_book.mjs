@@ -81,12 +81,13 @@ const chapters=files.map(file=>{
   const headingPattern=/<h([1-6]) id="([^"]+)">([\s\S]*?)<\/h\1>/g;
   const headings=[...html.matchAll(headingPattern)];
   for(let index=0;index<headings.length;index++){
-    const start=headings[index].index+headings[index][0].length;
+    const start=headings[index].index;
+    const bodyStart=start+headings[index][0].length;
     const end=index+1<headings.length?headings[index+1].index:html.length;
-    sections.push({id:headings[index][2],title:stripHtml(headings[index][3]),text:stripHtml(html.slice(start,end))});
+    sections.push({id:headings[index][2],title:stripHtml(headings[index][3]),text:stripHtml(html.slice(bodyStart,end)),html:html.slice(start,end)});
   }
-  if(!sections.length) sections.push({id:"",title,text:stripHtml(html)});
-  return {slug:fileToSlug.get(file),title,html,sections};
+  if(!sections.length) sections.push({id:"",title,text:stripHtml(html),html});
+  return {slug:fileToSlug.get(file),title,sections};
 });
 
 fs.rmSync(outputDir,{recursive:true,force:true});

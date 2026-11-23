@@ -26,7 +26,9 @@ class AssembleSiteTest(unittest.TestCase):
             with open(os.path.join(output, "app", "addons", "book", "index.html"), encoding="utf-8") as handle:
                 self.assertEqual(handle.read(), "book")
             with open(os.path.join(output, "app", "addons", "manifest.json"), encoding="utf-8") as handle:
-                self.assertEqual(json.load(handle)["addons"][0]["id"], "book")
+                addon = json.load(handle)["addons"][0]
+                self.assertEqual(addon["id"], "book")
+                self.assertEqual(addon["contextIndex"], "book/book.json")
 
 
 if __name__ == "__main__":

@@ -4,29 +4,23 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="color-scheme" content="light dark">
-  <title>Databricks Data Intelligence Platform</title>
+  <title>Relevant Book Content</title>
   <link rel="stylesheet" href="reader.css">
 </head>
 <body>
   <header class="reader-header">
-    <button id="nav-toggle" class="icon-button" type="button" aria-label="Show chapters" aria-expanded="false">☰</button>
+    <button id="back" class="back-button" type="button" hidden>← Matches</button>
     <div class="reader-title">
-      <strong>Databricks Data Intelligence Platform</strong>
-      <span>Powering the Agentic Era</span>
+      <strong>Relevant Book Content</strong>
+      <span>Databricks Data Intelligence Platform</span>
     </div>
-    <label class="search-box">
-      <span class="sr-only">Search the book</span>
-      <input id="search" type="search" placeholder="Search the book" autocomplete="off">
-    </label>
   </header>
-  <div class="reader-layout">
-    <nav id="chapters" class="chapters" aria-label="Book chapters"></nav>
-    <main id="content" class="content" tabindex="-1">
-      <div id="loading" class="loading">Loading the book…</div>
-    </main>
-    <aside id="results" class="results" aria-label="Search results" hidden></aside>
-  </div>
-  <div id="nav-scrim" class="nav-scrim" hidden></div>
+  <main id="content" class="content" tabindex="-1">
+    <section class="empty-state">
+      <h1>Select an architecture component</h1>
+      <p>Click a box in the architecture diagram to see the most relevant passages from the book.</p>
+    </section>
+  </main>
   <script src="reader.js"></script>
 </body>
 </html>

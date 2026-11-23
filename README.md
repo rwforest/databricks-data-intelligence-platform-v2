@@ -4,7 +4,7 @@ Welcome to the repository for the **GenAI Book**. This repository contains the m
 
 ## Interactive Architecture Add-on
 
-This repository can publish the book as a searchable reader inside the [Databricks Reference Architecture](https://github.com/databricks-industry-solutions/databricks-reference-architecture). The integration uses a same-origin add-on manifest and iframe, so the book does not depend on the architecture UI's internal markup or JavaScript.
+This repository maps the book back to the [Databricks Reference Architecture](https://github.com/databricks-industry-solutions/databricks-reference-architecture). Selecting an architecture component adds a small **From the book** section to its detail panel, ranked to the most relevant chapters and passages. Opening a result displays only that passage—not the table of contents or the complete manuscript. The integration uses a same-origin add-on manifest and iframe, so book code remains isolated from the architecture renderer.
 
 - Run `npm install && npm test` to validate all chapters, images, and integration assembly.
 - Run `npm run build` to generate the standalone reader in `dist/book`.
@@ -14,9 +14,9 @@ This repository can publish the book as a searchable reader inside the [Databric
 
 The upstream contribution consists only of `integration/addon-host.js`, `integration/addon-host.css`, and the two tags inserted idempotently by `integration/apply_host.py`. If no `/app/addons/manifest.json` exists, the reference architecture behaves exactly as before.
 
-![The book reader opened beside the Databricks Reference Architecture](docs/book-addon-overview.png)
+![Unity Catalog detail panel mapped to three relevant passages from the book](docs/book-addon-overview.png)
 
-![Full-text book search results for Unity Catalog](docs/book-addon-search.png)
+![A single Unity Catalog passage opened beside the architecture](docs/book-addon-search.png)
 
 ## 🌟 Praise for the Book
 

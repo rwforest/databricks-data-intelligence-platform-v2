@@ -27,6 +27,7 @@ def assemble(upstream, book, output):
             "title": "Databricks Data Intelligence Platform",
             "icon": "book",
             "entry": "book/index.html",
+            "contextIndex": "book/book.json",
         }],
     }
     with open(os.path.join(addons_dir, "manifest.json"), "w", encoding="utf-8") as handle:

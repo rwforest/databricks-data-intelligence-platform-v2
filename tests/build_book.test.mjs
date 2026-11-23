@@ -13,13 +13,14 @@ test("book build contains every chapter and resolves local images",()=>{
   const book=JSON.parse(fs.readFileSync(path.join(output,"book.json"),"utf8"));
   assert.equal(book.schemaVersion,1);
   assert.equal(book.chapters.length,32);
-  const imageRefs=book.chapters.flatMap(chapter=>[...chapter.html.matchAll(/<img src="([^"]+)"/g)].map(match=>match[1]));
+  const sectionHtml=book.chapters.flatMap(chapter=>chapter.sections.map(section=>section.html));
+  const imageRefs=sectionHtml.flatMap(html=>[...html.matchAll(/<img src="([^"]+)"/g)].map(match=>match[1]));
   assert.ok(imageRefs.length>250);
   for(const reference of imageRefs){
     if(/^https?:/.test(reference)) continue;
     assert.ok(fs.existsSync(path.resolve(output,reference)),reference);
   }
-  const unresolved=book.chapters.flatMap(chapter=>[...chapter.html.matchAll(/href="([^"]+)"/g)].map(match=>match[1])).filter(reference=>!reference.startsWith("?")&&!reference.startsWith("#")&&!/^(https?:|mailto:)/.test(reference));
+  const unresolved=sectionHtml.flatMap(html=>[...html.matchAll(/href="([^"]+)"/g)].map(match=>match[1])).filter(reference=>!reference.startsWith("?")&&!reference.startsWith("#")&&!/^(https?:|mailto:)/.test(reference));
   assert.deepEqual(unresolved,[]);
-  assert.ok(book.chapters.every(chapter=>!/<script\b|\son\w+=|javascript:/i.test(chapter.html)));
+  assert.ok(sectionHtml.every(html=>!/<script\b|\son\w+=|javascript:/i.test(html)));
 });
