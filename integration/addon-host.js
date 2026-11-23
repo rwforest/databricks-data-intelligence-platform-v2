@@ -58,7 +58,7 @@
     if(!currentMatches.length){sendContext();return}
     const card=document.createElement("section");card.className="addon-context-card";const heading=document.createElement("h4");heading.textContent="From the book";card.append(heading);
     for(const match of currentMatches){const button=document.createElement("button");button.type="button";button.className="addon-context-link";button.innerHTML="<strong></strong><span></span><em></em><b>Open passage →</b>";button.querySelector("strong").textContent=match.sectionTitle;button.querySelector("span").textContent=match.chapterTitle;button.querySelector("em").textContent=match.excerpt;button.addEventListener("click",()=>open(contextAddon,contextButton,match));card.append(button)}
-    body.append(card);sendContext();
+    body.prepend(card);sendContext();
   }
 
   function install(manifest){

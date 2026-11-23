@@ -14,6 +14,7 @@ function check(name,value,detail){checks.push(!!value);console.log((value?'PASS 
     check('book launcher is installed',await page.locator('.addon-launcher').textContent()==='Book');
     const unity=page.locator('.atom:visible').filter({hasText:'Unity Catalog'}).first();await unity.click();
     await page.locator('.addon-context-link').first().waitFor();
+    check('book references are prioritized above other resources',await page.locator('#d-body > :first-child').evaluate(node=>node.classList.contains('addon-context-card')));
     const labels=await page.locator('.addon-context-link').allTextContents();
     check('the selected architecture box gets mapped to subsections',labels.length>0&&labels.join(' ').includes('Unity Catalog')&&!labels[0].startsWith('14. Open Data Governance'),labels.join(' | '));
     await page.locator('.addon-context-link').first().hover();
