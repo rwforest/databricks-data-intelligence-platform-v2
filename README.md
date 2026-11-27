@@ -4,7 +4,7 @@ Welcome to the repository for the **GenAI Book**. This repository contains the m
 
 ## Interactive Architecture Add-on
 
-This repository maps the book back to the [Databricks Reference Architecture](https://github.com/databricks-industry-solutions/databricks-reference-architecture). Selecting an architecture component puts a prioritized **From the book** section at the top of its detail panel, ahead of documentation, articles, demos, and videos. Results map to relevant subsection headings rather than whole chapters. Hovering or focusing reveals a concise preview in place; opening the passage is optional. The integration uses a same-origin add-on manifest and iframe, so book code remains isolated from the architecture renderer.
+This repository maps the book back to the [Databricks Reference Architecture](https://github.com/databricks-industry-solutions/databricks-reference-architecture). Selecting an architecture component puts a prioritized **From the book** section at the top of its detail panel, ahead of documentation, articles, demos, and videos. Results map to relevant subsection headings, show a readable inline preview, and offer explicit actions to read the section or open its complete chapter. The integration uses a same-origin add-on manifest and iframe, so book code remains isolated from the architecture renderer.
 
 - Run `npm install && npm test` to validate all chapters, images, and integration assembly.
 - Run `npm run build` to generate the standalone reader in `dist/book`.
@@ -16,7 +16,7 @@ The upstream contribution consists only of `integration/addon-host.js`, `integra
 
 ![Unity Catalog detail panel mapped to three relevant passages from the book](docs/book-addon-overview.png)
 
-![A single Unity Catalog passage opened beside the architecture](docs/book-addon-search.png)
+![The complete Unity Catalog chapter opened beside the architecture](docs/book-addon-search.png)
 
 ## 🌟 Praise for the Book
 

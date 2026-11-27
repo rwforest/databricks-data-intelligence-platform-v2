@@ -17,14 +17,17 @@ function check(name,value,detail){checks.push(!!value);console.log((value?'PASS 
     check('book references are prioritized above other resources',await page.locator('#d-body > :first-child').evaluate(node=>node.classList.contains('addon-context-card')));
     const labels=await page.locator('.addon-context-link').allTextContents();
     check('the selected architecture box gets mapped to subsections',labels.length>0&&labels.join(' ').includes('Unity Catalog')&&!labels[0].startsWith('14. Open Data Governance'),labels.join(' | '));
-    await page.locator('.addon-context-link').first().hover();
-    check('hover reveals a concise book preview',await page.locator('.addon-context-link em').first().isVisible());
-    await page.locator('.addon-context-link').first().click();
+    check('the concise book preview is readable without hover',await page.locator('.addon-context-link p').first().isVisible());
+    check('section and chapter actions are both available',await page.locator('.addon-context-link').first().getByRole('button').count()===2);
+    await page.locator('.addon-context-link').first().getByRole('button',{name:'Read section'}).click();
     const frame=page.frameLocator('.addon-shell iframe');await frame.locator('.passage').waitFor();
     check('only the selected passage opens',await frame.locator('.chapters').count()===0&&await frame.locator('.passage').count()===1);
     check('passage state reaches the parent URL',/[?&]chapter=/.test(page.url())&&/[?&]section=/.test(page.url()));
     await page.evaluate(()=>document.body.classList.add('theme-dark'));await frame.locator('html.theme-dark').waitFor();check('passage follows board theme',await frame.locator('html').getAttribute('class')==='theme-dark');
     await frame.locator('#content').press('Escape');check('Escape closes the add-on',await page.locator('.addon-shell').count()===0);
+    await page.locator('.addon-context-link').first().getByRole('button',{name:'Open chapter'}).click();
+    const chapterFrame=page.frameLocator('.addon-shell iframe');await chapterFrame.locator('.chapter-view').waitFor();
+    check('open chapter renders the complete chapter',await chapterFrame.locator('.chapter-view h2').count()>1);
   }finally{await browser.close();await new Promise(resolve=>server.close(resolve))}
   if(checks.some(value=>!value))process.exitCode=1;
 })().catch(error=>{console.error(error);process.exitCode=1});

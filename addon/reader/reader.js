@@ -25,9 +25,16 @@
     const params=query();params.set("chapter",chapter.slug);params.set("section",section.id);history.replaceState({},"",location.pathname+"?"+params.toString());content.scrollIntoView();content.focus({preventScroll:true});
   }
 
+  function openChapter(chapterSlug){
+    const chapter=book&&book.chapters.find(item=>item.slug===chapterSlug);if(!chapter)return;
+    back.hidden=!currentMatches.length;
+    content.innerHTML='<header class="passage-head chapter-head"><strong>Complete chapter</strong></header><article class="passage chapter-view"></article>'+license();content.querySelector(".passage").innerHTML=chapter.sections.map(section=>section.html).join("");
+    const params=query();params.set("chapter",chapter.slug);params.set("view","chapter");params.delete("section");history.replaceState({},"",location.pathname+"?"+params.toString());content.scrollIntoView();content.focus({preventScroll:true});
+  }
+
   back.addEventListener("click",()=>renderMatches(currentContext,currentMatches));
   addEventListener("message",event=>{if(event.origin!==location.origin||!event.data)return;if(event.data.type==="databricks-addon-theme")setTheme(event.data.theme);if(event.data.type==="databricks-addon-context")renderMatches(event.data.context,event.data.matches)});
   document.addEventListener("keydown",event=>{if(event.key==="Escape"&&query().get("embedded")==="1")parent.postMessage({type:"databricks-addon-close"},location.origin)});
-  fetch("book.json",{cache:"no-store"}).then(response=>response.json()).then(data=>{book=data;const params=query();if(params.get("chapter"))openPassage(params.get("chapter"),params.get("section"))}).catch(()=>{content.innerHTML='<section class="empty-state"><h1>Book content unavailable</h1></section>'});
+  fetch("book.json",{cache:"no-store"}).then(response=>response.json()).then(data=>{book=data;const params=query();if(params.get("chapter")){if(params.get("view")==="chapter")openChapter(params.get("chapter"));else openPassage(params.get("chapter"),params.get("section"))}}).catch(()=>{content.innerHTML='<section class="empty-state"><h1>Book content unavailable</h1></section>'});
   setTheme(query().get("theme"));
 })();

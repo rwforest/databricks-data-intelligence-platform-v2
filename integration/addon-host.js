@@ -35,16 +35,16 @@
 
   function close(){
     if(!current)return;current.remove();current=null;currentFrame=null;document.body.classList.remove("addon-open");
-    const params=new URLSearchParams(location.search);for(const key of ["addon","chapter","section"])params.delete(key);history.replaceState(history.state,"",location.pathname+(params.size?"?"+params.toString():"")+location.hash);if(opener)opener.focus();
+    const params=new URLSearchParams(location.search);for(const key of ["addon","chapter","section","bookView"])params.delete(key);history.replaceState(history.state,"",location.pathname+(params.size?"?"+params.toString():"")+location.hash);if(opener)opener.focus();
   }
 
   function sendContext(){if(currentFrame&&currentContext)currentFrame.contentWindow.postMessage({type:"databricks-addon-context",context:currentContext,matches:currentMatches},location.origin)}
-  function open(addon,button,match){
+  function open(addon,button,match,view="section"){
     close();const entry=sameOrigin(addon.entry);if(!entry)return;const params=new URLSearchParams(location.search);params.set("addon",addon.id);
-    if(match){params.set("chapter",match.chapter);params.set("section",match.section);entry.searchParams.set("chapter",match.chapter);entry.searchParams.set("section",match.section)}
+    if(match){params.set("chapter",match.chapter);entry.searchParams.set("chapter",match.chapter);params.set("bookView",view);entry.searchParams.set("view",view);if(view==="section"){params.set("section",match.section);entry.searchParams.set("section",match.section)}else params.delete("section")}
     history.replaceState(history.state,"",location.pathname+"?"+params.toString()+location.hash);entry.searchParams.set("embedded","1");entry.searchParams.set("theme",document.body.classList.contains("theme-dark")?"dark":"light");
     const shell=document.createElement("section");shell.className="addon-shell";shell.setAttribute("role","dialog");shell.setAttribute("aria-modal","true");shell.setAttribute("aria-label",addon.title);
-    const head=document.createElement("header");const title=document.createElement("strong");title.textContent=match?match.sectionTitle:addon.title;const closeButton=document.createElement("button");closeButton.type="button";closeButton.className="addon-close";closeButton.setAttribute("aria-label","Close "+addon.title);closeButton.textContent="×";closeButton.addEventListener("click",close);
+    const head=document.createElement("header");const title=document.createElement("strong");title.textContent=match?(view==="chapter"?match.chapterTitle:match.sectionTitle):addon.title;const closeButton=document.createElement("button");closeButton.type="button";closeButton.className="addon-close";closeButton.setAttribute("aria-label","Close "+addon.title);closeButton.textContent="×";closeButton.addEventListener("click",close);
     const frame=document.createElement("iframe");frame.src=entry.href;frame.title=addon.title;frame.loading="eager";frame.addEventListener("load",()=>{frame.contentWindow.addEventListener("keydown",event=>{if(event.key==="Escape")close()});sendContext()});
     head.append(title,closeButton);shell.append(head,frame);document.body.append(shell);current=shell;currentFrame=frame;opener=button;document.body.classList.add("addon-open");closeButton.focus();
   }
@@ -57,7 +57,10 @@
     body.dataset.bookContext=signature;currentContext=context;currentMatches=rank(context);body.querySelectorAll(".addon-context-card").forEach(node=>node.remove());
     if(!currentMatches.length){sendContext();return}
     const card=document.createElement("section");card.className="addon-context-card";const heading=document.createElement("h4");heading.textContent="From the book";card.append(heading);
-    for(const match of currentMatches){const button=document.createElement("button");button.type="button";button.className="addon-context-link";button.innerHTML="<strong></strong><span></span><em></em><b>Open passage →</b>";button.querySelector("strong").textContent=match.sectionTitle;button.querySelector("span").textContent=match.chapterTitle;button.querySelector("em").textContent=match.excerpt;button.addEventListener("click",()=>open(contextAddon,contextButton,match));card.append(button)}
+    for(const match of currentMatches){
+      const item=document.createElement("article");item.className="addon-context-link";item.innerHTML="<strong></strong><span></span><p></p><div class=\"addon-context-actions\"></div>";item.querySelector("strong").textContent=match.sectionTitle;item.querySelector("span").textContent=match.chapterTitle;item.querySelector("p").textContent=match.excerpt;
+      const actions=item.querySelector(".addon-context-actions");const sectionButton=document.createElement("button");sectionButton.type="button";sectionButton.textContent="Read section";sectionButton.addEventListener("click",()=>open(contextAddon,contextButton,match,"section"));const chapterButton=document.createElement("button");chapterButton.type="button";chapterButton.className="secondary";chapterButton.textContent="Open chapter";chapterButton.addEventListener("click",()=>open(contextAddon,contextButton,match,"chapter"));actions.append(sectionButton,chapterButton);card.append(item);
+    }
     body.prepend(card);sendContext();
   }
 
