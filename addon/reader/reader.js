@@ -30,8 +30,8 @@
   function openPassage(chapterSlug,sectionId,options={historyMode:"replace",canGoBack:false}){
     const found=findSection(chapterSlug,sectionId);if(!found)return;
     const {chapter,section}=found;back.hidden=false;setHeader(chapterNumber(chapter),chapter.title.replace(/^\d+\.\s*/,""));document.title=section.title+" | "+chapter.title;
-    content.innerHTML='<article class="reading-view"><header class="passage-head"><span class="eyebrow">Section</span><h1></h1><button class="chapter-link" type="button">Open complete chapter →</button></header><div class="passage"></div></article>'+license();
-    content.querySelector(".passage-head h1").textContent=section.title||chapter.title;content.querySelector(".passage").innerHTML=section.bodyHtml||section.html;content.querySelector(".chapter-link").addEventListener("click",()=>openChapter(chapter.slug));
+    content.innerHTML='<article class="reading-view"><header class="passage-head"><span class="eyebrow">Section</span><h1></h1><button class="chapter-link" type="button" aria-label="Open complete chapter"><span><strong>Open complete chapter</strong><small>Table of contents and every section</small></span><b aria-hidden="true">→</b></button></header><div class="passage"></div></article>'+license();
+    content.querySelector(".passage-head h1").textContent=section.title||chapter.title;content.querySelector(".passage").innerHTML=section.bodyHtml||section.html;content.querySelector(".chapter-link").addEventListener("click",()=>openChapter(chapter.slug,section.id));
     setLocation({bookNav:true,view:"section",chapter:chapter.slug,section:section.id,canGoBack:options.canGoBack},options.historyMode);announce("Section opened: "+section.title);content.scrollIntoView();content.focus({preventScroll:true});
   }
 
@@ -42,7 +42,7 @@
     content.innerHTML='<article class="reading-view chapter-reading"><header class="chapter-intro"><span class="eyebrow">Complete chapter</span><h1></h1></header><nav class="chapter-toc" aria-label="Chapter sections"><strong>In this chapter</strong><div></div></nav><div class="passage chapter-view"></div></article>'+license();
     content.querySelector(".chapter-intro h1").textContent=chapter.title.replace(/^\d+\.\s*/,"");
     const toc=content.querySelector(".chapter-toc div");
-    for(const section of sections.filter(section=>section.depth===2)){const link=document.createElement("a");link.href="#"+section.id;link.textContent=section.title;toc.append(link)}
+    for(const section of sections.filter(section=>section.depth===2)){const link=document.createElement("a");link.href="#"+section.id;link.textContent=section.title;if(section.id===selectedSection){link.className="current";link.setAttribute("aria-current","location")}toc.append(link)}
     content.querySelector(".passage").innerHTML=(root?root.bodyHtml:"")+sections.map(section=>section.html).join("");
     setLocation({bookNav:true,view:"chapter",chapter:chapter.slug,canGoBack:options.canGoBack},options.historyMode);announce("Complete chapter opened: "+chapter.title);
     requestAnimationFrame(()=>{const target=selectedSection&&document.getElementById(selectedSection);if(target)target.scrollIntoView({block:"start"});else content.scrollIntoView();content.focus({preventScroll:true})});
@@ -51,7 +51,7 @@
   back.addEventListener("click",()=>{const state=history.state;if(state&&state.bookNav&&state.canGoBack)history.back();else renderMatches(currentContext,currentMatches)});
   addEventListener("popstate",event=>{const state=event.state;if(!state||!state.bookNav)return;if(state.view==="matches")renderMatches(currentContext,currentMatches,null);else if(state.view==="section")openPassage(state.chapter,state.section,{historyMode:null,canGoBack:state.canGoBack});else if(state.view==="chapter")openChapter(state.chapter,null,{historyMode:null,canGoBack:state.canGoBack})});
   addEventListener("message",event=>{if(event.origin!==location.origin||!event.data)return;if(event.data.type==="databricks-addon-theme")setTheme(event.data.theme);if(event.data.type==="databricks-addon-context"){currentContext=event.data.context;currentMatches=event.data.matches||[];if(!query().get("chapter"))renderMatches(currentContext,currentMatches)}});
-  document.addEventListener("keydown",event=>{if(event.key==="Escape"&&query().get("embedded")==="1")parent.postMessage({type:"databricks-addon-close"},location.origin)});
+  document.addEventListener("keydown",event=>{if(event.key==="Escape"&&query().get("embedded")==="1"){event.preventDefault();parent.postMessage({type:"databricks-addon-escape"},location.origin)}});
   fetch("book.json",{cache:"no-store"}).then(response=>response.json()).then(data=>{book=data;const params=query();if(params.get("chapter")){if(params.get("view")==="chapter")openChapter(params.get("chapter"),null,{historyMode:"replace",canGoBack:false});else openPassage(params.get("chapter"),params.get("section"),{historyMode:"replace",canGoBack:false})}else setLocation({bookNav:true,view:"matches",canGoBack:false},"replace")}).catch(()=>{content.innerHTML='<section class="empty-state"><h1>Book content unavailable</h1></section>'});
   setTheme(query().get("theme"));
 })();

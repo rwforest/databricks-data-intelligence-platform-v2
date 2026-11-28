@@ -18,6 +18,8 @@ The upstream contribution consists only of `integration/addon-host.js`, `integra
 
 ![The most relevant Unity Catalog section opened beside the architecture](docs/book-addon-section.png)
 
+![The Unity Catalog section in full-screen reading mode](docs/book-addon-fullscreen.png)
+
 ![The complete Unity Catalog chapter opened with a table of contents](docs/book-addon-search.png)
 
 ![The relevant Unity Catalog section in the full-screen mobile reader](docs/book-addon-mobile.png)

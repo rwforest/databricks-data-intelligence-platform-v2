@@ -19,6 +19,9 @@ function check(name,value,detail){checks.push(!!value);console.log((value?'PASS 
     check('the selected architecture box gets mapped to subsections',labels.length>0&&labels.join(' ').includes('Unity Catalog')&&!labels[0].startsWith('14. Open Data Governance'),labels.join(' | '));
     check('the concise book preview is readable without hover',await page.locator('.addon-context-link p').first().isVisible());
     check('section and chapter actions are both available',await page.locator('.addon-context-link').first().getByRole('button').count()===2);
+    const officialLinks=page.locator('.addon-official a');check('official docs and video remain visible beside the book',await officialLinks.count()>=2&&await page.locator('.addon-official').getByText('Documentation',{exact:true}).count()===1&&await page.locator('.addon-official').getByText('Video',{exact:true}).count()===1);
+    check('promoted references use only official Databricks sources',await officialLinks.evaluateAll(links=>links.every(link=>{const host=new URL(link.href).hostname.replace(/^www\./,'');return ['databricks.com','docs.databricks.com','youtube.com','youtu.be'].some(domain=>host===domain||host.endsWith('.'+domain))})));
+    check('the full native documentation and video sections are retained',(await page.locator('#d-body').innerText()).includes('LEARN MORE')&&(await page.locator('#d-body').innerText()).includes('DATABRICKS YOUTUBE CHANNEL'));
     await page.evaluate(()=>document.body.classList.add('theme-dark'));
     const contrast=await page.locator('.addon-context-link').first().evaluate(card=>{
       const rgb=value=>(value.match(/[\d.]+/g)||[]).slice(0,3).map(Number);
@@ -37,10 +40,15 @@ function check(name,value,detail){checks.push(!!value);console.log((value?'PASS 
     check('only the selected passage opens',await frame.locator('.chapters').count()===0&&await frame.locator('.passage').count()===1);
     check('the section heading appears once',await frame.getByRole('heading',{name:'What Is Databricks Unity Catalog?',exact:true}).count()===1);
     check('the section reader stays compact',await frame.locator('.passage-head h1').evaluate(node=>parseFloat(getComputedStyle(node).fontSize))<=36);
+    const chapterCta=frame.locator('.chapter-link');check('open complete chapter is a prominent full-width action',await chapterCta.evaluate(node=>{const style=getComputedStyle(node);return node.getBoundingClientRect().height>=50&&node.getBoundingClientRect().width>400&&style.backgroundColor!=='rgba(0, 0, 0, 0)'}));
     check('passage state reaches the parent URL',/[?&]chapter=/.test(page.url())&&/[?&]section=/.test(page.url()));
     await frame.locator('html.theme-dark').waitFor();check('passage follows board theme',await frame.locator('html').getAttribute('class')==='theme-dark');
-    await frame.locator('#content').press('Escape');check('Escape closes the add-on',await page.locator('.addon-shell').count()===0);
-    await page.locator('.addon-context-link').first().getByRole('button',{name:'Open chapter'}).click();
+    const fullscreen=page.locator('.addon-fullscreen');await fullscreen.click();await page.waitForFunction(()=>{const shell=document.querySelector('.addon-shell.is-fullscreen');return shell&&shell.getBoundingClientRect().width>=innerWidth-1});check('full screen reading mode fills the viewport',await fullscreen.getAttribute('aria-pressed')==='true');
+    check('full screen reading mode makes the background inert',await page.locator('body > :not(.addon-shell)').evaluateAll(nodes=>nodes.every(node=>node.inert))&&await page.locator('.addon-shell').getAttribute('aria-modal')==='true');
+    await frame.locator('#content').press('Escape');await page.locator('.addon-shell.is-fullscreen').waitFor({state:'detached'});check('Escape exits full screen before closing',await page.locator('.addon-shell').count()===1);
+    await chapterCta.click();await frame.locator('.chapter-view').waitFor();check('opening the complete chapter preserves the selected section',await frame.locator('.chapter-toc a[aria-current="location"]').count()===1);
+    await frame.locator('#content').press('Escape');await page.locator('.addon-shell').waitFor({state:'detached'});check('a second Escape closes the add-on',true);
+    await page.locator('.addon-context-link').first().getByRole('button',{name:'Open complete chapter'}).click();
     const chapterFrame=page.frameLocator('.addon-shell iframe');await chapterFrame.locator('.chapter-view').waitFor();
     check('open chapter renders the complete chapter',await chapterFrame.locator('.chapter-view h2').count()>1);
     check('the chapter provides section navigation',await chapterFrame.locator('.chapter-toc a').count()>3);
