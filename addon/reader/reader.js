@@ -8,6 +8,7 @@
   let currentContext=null;
   let currentMatches=[];
   let lastMatchIndex=0;
+  let chapterScrollHandler=null;
   const query=()=>new URLSearchParams(location.search);
   const setTheme=theme=>{document.documentElement.classList.toggle("theme-dark",theme==="dark");document.documentElement.classList.toggle("theme-light",theme==="light")};
   const license=()=>'<div class="reader-license">© The Authors 2026 · <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" rel="noopener">CC BY-NC-ND 4.0</a></div>';
@@ -16,9 +17,15 @@
   const setHeader=(primary,secondary)=>{kicker.textContent=primary;contextLabel.textContent=secondary};
   const announce=message=>{status.textContent="";requestAnimationFrame(()=>status.textContent=message)};
   const setLocation=(state,mode)=>{const params=query();for(const key of ["chapter","section","view"])params.delete(key);if(state.view!=="matches"){params.set("chapter",state.chapter);params.set("view",state.view);if(state.section)params.set("section",state.section)}if(mode)history[mode+"State"](state,"",location.pathname+"?"+params.toString());if(query().get("embedded")==="1")parent.postMessage({type:"databricks-addon-state",view:state.view,chapter:state.chapter||"",section:state.section||""},location.origin)};
+  const clearChapterNavigation=()=>{if(chapterScrollHandler){removeEventListener("scroll",chapterScrollHandler);removeEventListener("resize",chapterScrollHandler);chapterScrollHandler=null}document.documentElement.classList.remove("chapter-toc-passed")};
+
+  function setupChapterNavigation(selectedSection){
+    const topToc=content.querySelector(".chapter-toc"),sideToc=content.querySelector(".chapter-side-toc"),headings=[...content.querySelectorAll(".chapter-view h2[id]")];if(!topToc||!sideToc||!headings.length)return;
+    let ticking=false;chapterScrollHandler=()=>{if(ticking)return;ticking=true;requestAnimationFrame(()=>{ticking=false;const sideActive=topToc.getBoundingClientRect().bottom<=82&&matchMedia("(min-width:1200px)").matches;document.documentElement.classList.toggle("chapter-toc-passed",sideActive);topToc.inert=sideActive;sideToc.inert=!sideActive;topToc.setAttribute("aria-hidden",String(sideActive));sideToc.setAttribute("aria-hidden",String(!sideActive));let active=selectedSection||headings[0].id;for(const heading of headings){if(heading.getBoundingClientRect().top<=220)active=heading.id;else break}let sideCurrent=null;for(const link of content.querySelectorAll(".chapter-toc a,.chapter-side-toc a")){const current=link.hash==="#"+active;link.classList.toggle("current",current);if(current){link.setAttribute("aria-current","location");if(link.closest(".chapter-side-toc"))sideCurrent=link}else link.removeAttribute("aria-current")}if(sideActive&&sideCurrent){const top=sideCurrent.offsetTop,bottom=top+sideCurrent.offsetHeight,viewTop=sideToc.scrollTop+34,viewBottom=sideToc.scrollTop+sideToc.clientHeight-18;if(top<viewTop)sideToc.scrollTop=Math.max(0,top-34);else if(bottom>viewBottom)sideToc.scrollTop=bottom-sideToc.clientHeight+18}})};addEventListener("scroll",chapterScrollHandler,{passive:true});addEventListener("resize",chapterScrollHandler,{passive:true});chapterScrollHandler();
+  }
 
   function renderMatches(context,matches,historyMode="replace"){
-    currentContext=context;currentMatches=matches||[];back.hidden=true;setHeader("Relevant Book Content","Databricks Data Intelligence Platform");
+    clearChapterNavigation();currentContext=context;currentMatches=matches||[];back.hidden=true;setHeader("Relevant Book Content","Databricks Data Intelligence Platform");
     document.title="Relevant Book Content";setLocation({bookNav:true,view:"matches",canGoBack:false},historyMode);announce("Returned to book matches");
     if(!currentMatches.length){content.innerHTML='<section class="empty-state"><h1>No direct book match</h1><p>The selected architecture component is not covered directly in this edition.</p></section>';return}
     const head=document.createElement("section");head.className="context-head";head.innerHTML='<h1></h1><p></p>';head.querySelector("h1").textContent=context.name;head.querySelector("p").textContent="Relevant passages from the book";
@@ -28,7 +35,7 @@
   }
 
   function openPassage(chapterSlug,sectionId,options={historyMode:"replace",canGoBack:false}){
-    const found=findSection(chapterSlug,sectionId);if(!found)return;
+    clearChapterNavigation();const found=findSection(chapterSlug,sectionId);if(!found)return;
     const {chapter,section}=found;back.hidden=false;setHeader(chapterNumber(chapter),chapter.title.replace(/^\d+\.\s*/,""));document.title=section.title+" | "+chapter.title;
     content.innerHTML='<article class="reading-view"><header class="passage-head"><span class="eyebrow">Section</span><h1></h1><button class="chapter-link" type="button" aria-label="Open complete chapter"><span><strong>Open complete chapter</strong><small>Table of contents and every section</small></span><b aria-hidden="true">→</b></button></header><div class="passage"></div></article>'+license();
     content.querySelector(".passage-head h1").textContent=section.title||chapter.title;content.querySelector(".passage").innerHTML=section.bodyHtml||section.html;content.querySelector(".chapter-link").addEventListener("click",()=>openChapter(chapter.slug,section.id));
@@ -36,16 +43,16 @@
   }
 
   function openChapter(chapterSlug,selectedSection,options={historyMode:"push",canGoBack:true}){
-    const chapter=book&&book.chapters.find(item=>item.slug===chapterSlug);if(!chapter)return;
+    clearChapterNavigation();const chapter=book&&book.chapters.find(item=>item.slug===chapterSlug);if(!chapter)return;
     back.hidden=false;setHeader(chapterNumber(chapter),"Complete chapter");document.title=chapter.title;
     const root=chapter.sections.find(section=>section.depth===1);const sections=chapter.sections.filter(section=>section.depth>1);
-    content.innerHTML='<article class="reading-view chapter-reading"><header class="chapter-intro"><span class="eyebrow">Complete chapter</span><h1></h1></header><nav class="chapter-toc" aria-label="Chapter sections"><strong>In this chapter</strong><div></div></nav><div class="passage chapter-view"></div></article>'+license();
+    content.innerHTML='<article class="reading-view chapter-reading"><header class="chapter-intro"><span class="eyebrow">Complete chapter</span><h1></h1></header><nav class="chapter-toc" aria-label="Chapter sections"><strong>In this chapter</strong><div></div></nav><nav class="chapter-side-toc" aria-label="Chapter sections while reading"><strong>In this chapter</strong><div></div></nav><div class="passage chapter-view"></div></article>'+license();
     content.querySelector(".chapter-intro h1").textContent=chapter.title.replace(/^\d+\.\s*/,"");
-    const toc=content.querySelector(".chapter-toc div");
-    for(const section of sections.filter(section=>section.depth===2)){const link=document.createElement("a");link.href="#"+section.id;link.textContent=section.title;if(section.id===selectedSection){link.className="current";link.setAttribute("aria-current","location")}toc.append(link)}
+    const toc=content.querySelector(".chapter-toc div"),sideToc=content.querySelector(".chapter-side-toc div");
+    for(const section of sections.filter(section=>section.depth===2)){for(const container of [toc,sideToc]){const link=document.createElement("a");link.href="#"+section.id;link.textContent=section.title;if(section.id===selectedSection){link.className="current";link.setAttribute("aria-current","location")}container.append(link)}}
     content.querySelector(".passage").innerHTML=(root?root.bodyHtml:"")+sections.map(section=>section.html).join("");
     setLocation({bookNav:true,view:"chapter",chapter:chapter.slug,canGoBack:options.canGoBack},options.historyMode);announce("Complete chapter opened: "+chapter.title);
-    requestAnimationFrame(()=>{const target=selectedSection&&document.getElementById(selectedSection);if(target)target.scrollIntoView({block:"start"});else content.scrollIntoView();content.focus({preventScroll:true})});
+    requestAnimationFrame(()=>{const target=selectedSection&&document.getElementById(selectedSection);if(target)target.scrollIntoView({block:"start"});else content.scrollIntoView();setupChapterNavigation(selectedSection);content.focus({preventScroll:true})});
   }
 
   back.addEventListener("click",()=>{const state=history.state;if(state&&state.bookNav&&state.canGoBack)history.back();else renderMatches(currentContext,currentMatches)});
