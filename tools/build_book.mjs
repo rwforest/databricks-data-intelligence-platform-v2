@@ -84,9 +84,9 @@ const chapters=files.map(file=>{
     const start=headings[index].index;
     const bodyStart=start+headings[index][0].length;
     const end=index+1<headings.length?headings[index+1].index:html.length;
-    sections.push({id:headings[index][2],depth:Number(headings[index][1]),title:stripHtml(headings[index][3]),text:stripHtml(html.slice(bodyStart,end)),html:html.slice(start,end)});
+    sections.push({id:headings[index][2],depth:Number(headings[index][1]),title:stripHtml(headings[index][3]),text:stripHtml(html.slice(bodyStart,end)),html:html.slice(start,end),bodyHtml:html.slice(bodyStart,end)});
   }
-  if(!sections.length) sections.push({id:"",depth:1,title,text:stripHtml(html),html});
+  if(!sections.length) sections.push({id:"",depth:1,title,text:stripHtml(html),html,bodyHtml:html});
   return {slug:fileToSlug.get(file),title,sections};
 });
 

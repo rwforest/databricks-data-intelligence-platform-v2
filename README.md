@@ -16,7 +16,11 @@ The upstream contribution consists only of `integration/addon-host.js`, `integra
 
 ![Unity Catalog detail panel mapped to three relevant passages from the book](docs/book-addon-overview.png)
 
-![The complete Unity Catalog chapter opened beside the architecture](docs/book-addon-search.png)
+![The most relevant Unity Catalog section opened beside the architecture](docs/book-addon-section.png)
+
+![The complete Unity Catalog chapter opened with a table of contents](docs/book-addon-search.png)
+
+![The relevant Unity Catalog section in the full-screen mobile reader](docs/book-addon-mobile.png)
 
 ## 🌟 Praise for the Book
 

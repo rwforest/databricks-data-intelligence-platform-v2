@@ -12,7 +12,8 @@
     "cloud services integrations":["security first","production grade databricks apps"]
   };
   const stop=new Set(["about","architecture","business","cloud","data","databricks","details","every","external","platform","services","system","what","with"]);
-  let current=null,currentFrame=null,opener=null,contextAddon=null,contextButton=null,book=null,currentContext=null,currentMatches=[];
+  let current=null,currentFrame=null,currentAddonId=null,opener=null,contextAddon=null,book=null,currentContext=null,currentMatches=[];
+  const savedStateKey="databricks-addon-state-v1";
 
   const normalize=value=>(value||"").toLowerCase().replace(/&/g," and ").replace(/[^a-z0-9]+/g," ").trim();
   const words=value=>[...new Set(normalize(value).split(" ").filter(word=>word.length>2&&!stop.has(word)))];
@@ -34,7 +35,7 @@
   }
 
   function close(){
-    if(!current)return;current.remove();current=null;currentFrame=null;document.body.classList.remove("addon-open");
+    if(!current)return;current.remove();current=null;currentFrame=null;currentAddonId=null;sessionStorage.removeItem(savedStateKey);document.body.classList.remove("addon-open");
     const params=new URLSearchParams(location.search);for(const key of ["addon","chapter","section","bookView"])params.delete(key);history.replaceState(history.state,"",location.pathname+(params.size?"?"+params.toString():"")+location.hash);if(opener)opener.focus();
   }
 
@@ -43,10 +44,10 @@
     close();const entry=sameOrigin(addon.entry);if(!entry)return;const params=new URLSearchParams(location.search);params.set("addon",addon.id);
     if(match){params.set("chapter",match.chapter);entry.searchParams.set("chapter",match.chapter);params.set("bookView",view);entry.searchParams.set("view",view);if(view==="section"){params.set("section",match.section);entry.searchParams.set("section",match.section)}else params.delete("section")}
     history.replaceState(history.state,"",location.pathname+"?"+params.toString()+location.hash);entry.searchParams.set("embedded","1");entry.searchParams.set("theme",document.body.classList.contains("theme-dark")?"dark":"light");
-    const shell=document.createElement("section");shell.className="addon-shell";shell.setAttribute("role","dialog");shell.setAttribute("aria-modal","true");shell.setAttribute("aria-label",addon.title);
-    const head=document.createElement("header");const title=document.createElement("strong");title.textContent=match?(view==="chapter"?match.chapterTitle:match.sectionTitle):addon.title;const closeButton=document.createElement("button");closeButton.type="button";closeButton.className="addon-close";closeButton.setAttribute("aria-label","Close "+addon.title);closeButton.textContent="×";closeButton.addEventListener("click",close);
+    const shell=document.createElement("aside");shell.className="addon-shell";shell.setAttribute("role","complementary");shell.setAttribute("aria-label",addon.title);
+    const head=document.createElement("header");const title=document.createElement("strong");title.textContent="From the book";const closeButton=document.createElement("button");closeButton.type="button";closeButton.className="addon-close";closeButton.setAttribute("aria-label","Close "+addon.title);closeButton.textContent="×";closeButton.addEventListener("click",close);
     const frame=document.createElement("iframe");frame.src=entry.href;frame.title=addon.title;frame.loading="eager";frame.addEventListener("load",()=>{frame.contentWindow.addEventListener("keydown",event=>{if(event.key==="Escape")close()});sendContext()});
-    head.append(title,closeButton);shell.append(head,frame);document.body.append(shell);current=shell;currentFrame=frame;opener=button;document.body.classList.add("addon-open");closeButton.focus();
+    head.append(title,closeButton);shell.append(head,frame);document.body.append(shell);current=shell;currentFrame=frame;currentAddonId=addon.id;opener=button;sessionStorage.setItem(savedStateKey,JSON.stringify({addon:addon.id,view:match?view:"matches",chapter:match?match.chapter:"",section:match&&view==="section"?match.section:""}));document.body.classList.add("addon-open");closeButton.focus();
   }
 
   function renderContext(){
@@ -57,9 +58,10 @@
     body.dataset.bookContext=signature;currentContext=context;currentMatches=rank(context);body.querySelectorAll(".addon-context-card").forEach(node=>node.remove());
     if(!currentMatches.length){sendContext();return}
     const card=document.createElement("section");card.className="addon-context-card";const heading=document.createElement("h4");heading.textContent="From the book";card.append(heading);
-    for(const match of currentMatches){
-      const item=document.createElement("article");item.className="addon-context-link";item.innerHTML="<strong></strong><span></span><p></p><div class=\"addon-context-actions\"></div>";item.querySelector("strong").textContent=match.sectionTitle;item.querySelector("span").textContent=match.chapterTitle;item.querySelector("p").textContent=match.excerpt;
-      const actions=item.querySelector(".addon-context-actions");const sectionButton=document.createElement("button");sectionButton.type="button";sectionButton.textContent="Read section";sectionButton.addEventListener("click",()=>open(contextAddon,contextButton,match,"section"));const chapterButton=document.createElement("button");chapterButton.type="button";chapterButton.className="secondary";chapterButton.textContent="Open chapter";chapterButton.addEventListener("click",()=>open(contextAddon,contextButton,match,"chapter"));actions.append(sectionButton,chapterButton);card.append(item);
+    for(const [index,match] of currentMatches.entries()){
+      if(index===1){const more=document.createElement("p");more.className="addon-context-more";more.textContent="More book matches";card.append(more)}
+      const item=document.createElement("article");const headingId="addon-match-"+index+"-"+match.section.replace(/[^a-z0-9_-]/gi,"-");item.className="addon-context-link"+(index?" compact":"");item.setAttribute("aria-labelledby",headingId);item.innerHTML='<h5 id="'+headingId+'"></h5><span></span>'+(index?'':'<p></p>')+'<div class="addon-context-actions"></div>';item.querySelector("h5").textContent=match.sectionTitle;item.querySelector("span").textContent=match.chapterTitle;if(!index)item.querySelector("p").textContent=match.excerpt;
+      const actions=item.querySelector(".addon-context-actions");const sectionButton=document.createElement("button");sectionButton.type="button";sectionButton.textContent="Read section";sectionButton.setAttribute("aria-label","Read section: "+match.sectionTitle);sectionButton.addEventListener("click",event=>open(contextAddon,event.currentTarget,match,"section"));const chapterButton=document.createElement("button");chapterButton.type="button";chapterButton.className="secondary";chapterButton.textContent="Open chapter";chapterButton.setAttribute("aria-label","Open chapter: "+match.chapterTitle);chapterButton.addEventListener("click",event=>open(contextAddon,event.currentTarget,match,"chapter"));actions.append(sectionButton,chapterButton);card.append(item);
     }
     body.prepend(card);sendContext();
   }
@@ -67,14 +69,14 @@
   function install(manifest){
     if(!manifest||manifest.schemaVersion!==1||!Array.isArray(manifest.addons))return;const slot=document.createElement("div");slot.className="addon-slot";const tools=document.querySelector("header.top .htools");(tools||document.body).append(slot);
     for(const addon of manifest.addons){if(!addon||!/^[-a-z0-9]+$/.test(addon.id||"")||!addon.label||!addon.title||!sameOrigin(addon.entry))continue;const button=document.createElement("button");button.type="button";button.className="hbtn addon-launcher";button.title=addon.title;button.innerHTML=icon+"<span></span>";button.querySelector("span").textContent=addon.label;button.addEventListener("click",()=>open(addon,button));slot.append(button);
-      if(addon.contextIndex&&sameOrigin(addon.contextIndex)){contextAddon=addon;contextButton=button;fetch(sameOrigin(addon.contextIndex),{cache:"no-store"}).then(response=>response.json()).then(data=>{book=data;renderContext()}).catch(()=>{})}
-      if(new URLSearchParams(location.search).get("addon")===addon.id)open(addon,button);
+      if(addon.contextIndex&&sameOrigin(addon.contextIndex)){contextAddon=addon;fetch(sameOrigin(addon.contextIndex),{cache:"no-store"}).then(response=>response.json()).then(data=>{book=data;renderContext()}).catch(()=>{})}
+      const locationParams=new URLSearchParams(location.search);let saved={};try{saved=JSON.parse(sessionStorage.getItem(savedStateKey)||"{}")||{}}catch{}const shouldRestore=locationParams.get("addon")===addon.id||saved.addon===addon.id;if(shouldRestore){const chapter=locationParams.get("chapter")||saved.chapter,section=locationParams.get("section")||saved.section,view=locationParams.get("bookView")||saved.view||(section?"section":"chapter");open(addon,button,chapter?{chapter,section}:null,view)}
     }
     if(!slot.childElementCount)slot.remove();
   }
 
   document.addEventListener("keydown",event=>{if(event.key==="Escape"&&current)close()});
-  addEventListener("message",event=>{if(!currentFrame||event.origin!==location.origin||event.source!==currentFrame.contentWindow||!event.data)return;if(event.data.type==="databricks-addon-close")close()});
+  addEventListener("message",event=>{if(!currentFrame||event.origin!==location.origin||event.source!==currentFrame.contentWindow||!event.data)return;if(event.data.type==="databricks-addon-close")close();if(event.data.type==="databricks-addon-state"&&["matches","section","chapter"].includes(event.data.view)){const params=new URLSearchParams(location.search);for(const key of ["chapter","section","bookView"])params.delete(key);if(event.data.view!=="matches"&&event.data.chapter){params.set("chapter",event.data.chapter);params.set("bookView",event.data.view);if(event.data.view==="section"&&event.data.section)params.set("section",event.data.section)}sessionStorage.setItem(savedStateKey,JSON.stringify({addon:currentAddonId,view:event.data.view,chapter:event.data.chapter||"",section:event.data.section||""}));history.replaceState(history.state,"",location.pathname+"?"+params.toString()+location.hash)}});
   let timer;new MutationObserver(()=>{clearTimeout(timer);timer=setTimeout(renderContext,0);if(currentFrame)currentFrame.contentWindow.postMessage({type:"databricks-addon-theme",theme:document.body.classList.contains("theme-dark")?"dark":"light"},location.origin)}).observe(document.body,{attributes:true,attributeFilter:["class"],childList:true,subtree:true});
   fetch(manifestUrl,{cache:"no-store"}).then(response=>response.ok&&/json/i.test(response.headers.get("content-type")||"")?response.json():null).then(install).catch(()=>{});
 })();

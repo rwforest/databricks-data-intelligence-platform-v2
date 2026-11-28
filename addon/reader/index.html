@@ -11,8 +11,8 @@
   <header class="reader-header">
     <button id="back" class="back-button" type="button" hidden>← Matches</button>
     <div class="reader-title">
-      <strong>Relevant Book Content</strong>
-      <span>Databricks Data Intelligence Platform</span>
+      <strong id="reader-kicker">Relevant Book Content</strong>
+      <span id="reader-context">Databricks Data Intelligence Platform</span>
     </div>
   </header>
   <main id="content" class="content" tabindex="-1">
@@ -21,6 +21,7 @@
       <p>Click a box in the architecture diagram to see the most relevant passages from the book.</p>
     </section>
   </main>
+  <div id="status" class="sr-only" aria-live="polite"></div>
   <script src="reader.js"></script>
 </body>
 </html>

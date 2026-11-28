@@ -26,7 +26,7 @@ function check(name,value,detail){checks.push(!!value);console.log((value?'PASS 
       const ratio=(a,b)=>{const hi=Math.max(a,b),lo=Math.min(a,b);return(hi+.05)/(lo+.05)};
       const background=luminance(getComputedStyle(card).backgroundColor);
       return {
-        heading:ratio(background,luminance(getComputedStyle(card.querySelector('strong')).color)),
+        heading:ratio(background,luminance(getComputedStyle(card.querySelector('h5')).color)),
         chapter:ratio(background,luminance(getComputedStyle(card.querySelector('span')).color)),
         preview:ratio(background,luminance(getComputedStyle(card.querySelector('p')).color))
       };
@@ -35,12 +35,18 @@ function check(name,value,detail){checks.push(!!value);console.log((value?'PASS 
     await page.locator('.addon-context-link').first().getByRole('button',{name:'Read section'}).click();
     const frame=page.frameLocator('.addon-shell iframe');await frame.locator('.passage').waitFor();
     check('only the selected passage opens',await frame.locator('.chapters').count()===0&&await frame.locator('.passage').count()===1);
+    check('the section heading appears once',await frame.getByRole('heading',{name:'What Is Databricks Unity Catalog?',exact:true}).count()===1);
+    check('the section reader stays compact',await frame.locator('.passage-head h1').evaluate(node=>parseFloat(getComputedStyle(node).fontSize))<=36);
     check('passage state reaches the parent URL',/[?&]chapter=/.test(page.url())&&/[?&]section=/.test(page.url()));
     await frame.locator('html.theme-dark').waitFor();check('passage follows board theme',await frame.locator('html').getAttribute('class')==='theme-dark');
     await frame.locator('#content').press('Escape');check('Escape closes the add-on',await page.locator('.addon-shell').count()===0);
     await page.locator('.addon-context-link').first().getByRole('button',{name:'Open chapter'}).click();
     const chapterFrame=page.frameLocator('.addon-shell iframe');await chapterFrame.locator('.chapter-view').waitFor();
     check('open chapter renders the complete chapter',await chapterFrame.locator('.chapter-view h2').count()>1);
+    check('the chapter provides section navigation',await chapterFrame.locator('.chapter-toc a').count()>3);
+    check('the complete chapter includes its introduction',await chapterFrame.locator('.chapter-view > p').count()>0);
+    check('reader navigation updates the parent URL',/[?&]bookView=chapter/.test(page.url())&&!/[?&]section=/.test(page.url()));
+    await page.reload({waitUntil:'networkidle'});await boardReady(page);const restoredFrame=page.frameLocator('.addon-shell iframe');await restoredFrame.locator('.chapter-view').waitFor();check('refresh restores the chapter view',await restoredFrame.locator('.chapter-toc').isVisible());
   }finally{await browser.close();await new Promise(resolve=>server.close(resolve))}
   if(checks.some(value=>!value))process.exitCode=1;
 })().catch(error=>{console.error(error);process.exitCode=1});
