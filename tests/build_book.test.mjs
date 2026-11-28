@@ -12,6 +12,8 @@ test("book build contains every chapter and resolves local images",()=>{
   buildBook(output);
   const book=JSON.parse(fs.readFileSync(path.join(output,"book.json"),"utf8"));
   assert.equal(book.schemaVersion,1);
+  assert.equal(book.title,"Databricks Data Intelligence Platform: Powering the Agentic Era");
+  assert.equal(book.sourceUrl,"https://link.springer.com/book/10.1007/979-8-8688-2524-8");
   assert.equal(book.chapters.length,32);
   assert.ok(book.chapters.some(chapter=>chapter.sections.some(section=>section.depth>1)));
   const sectionHtml=book.chapters.flatMap(chapter=>chapter.sections.map(section=>section.html));

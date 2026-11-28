@@ -3,6 +3,7 @@
   const back=document.getElementById("back");
   const kicker=document.getElementById("reader-kicker");
   const contextLabel=document.getElementById("reader-context");
+  const bookLink=document.getElementById("reader-book-link");
   const status=document.getElementById("status");
   let book;
   let currentContext=null;
@@ -14,6 +15,7 @@
   const license=()=>'<div class="reader-license">© The Authors 2026 · <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" rel="noopener">CC BY-NC-ND 4.0</a></div>';
   const chapterNumber=chapter=>{const match=chapter.title.match(/^(\d+)\.\s*/);return match?"Chapter "+match[1]:"Book chapter"};
   const findSection=(chapterSlug,sectionId)=>{const chapter=book&&book.chapters.find(item=>item.slug===chapterSlug);if(!chapter)return null;const section=chapter.sections.find(item=>item.id===sectionId)||chapter.sections.find(item=>item.depth>1)||chapter.sections[0];return {chapter,section}};
+  const introductionMatch=()=>{const chapter=book&&book.chapters.find(item=>item.title.replace(/^\d+\.\s*/,"").trim().toLowerCase()==="introduction"),section=chapter&&chapter.sections.find(item=>item.depth>1);return chapter&&section?{chapter:chapter.slug,chapterTitle:chapter.title,section:section.id,sectionTitle:section.title,excerpt:(section.text||"").slice(0,220)+((section.text||"").length>220?"…":""),fallback:true}:null};
   const setHeader=(primary,secondary)=>{kicker.textContent=primary;contextLabel.textContent=secondary};
   const announce=message=>{status.textContent="";requestAnimationFrame(()=>status.textContent=message)};
   const setLocation=(state,mode)=>{const params=query();for(const key of ["chapter","section","view"])params.delete(key);if(state.view!=="matches"){params.set("chapter",state.chapter);params.set("view",state.view);if(state.section)params.set("section",state.section)}if(mode)history[mode+"State"](state,"",location.pathname+"?"+params.toString());if(query().get("embedded")==="1")parent.postMessage({type:"databricks-addon-state",view:state.view,chapter:state.chapter||"",section:state.section||""},location.origin)};
@@ -25,10 +27,11 @@
   }
 
   function renderMatches(context,matches,historyMode="replace"){
-    clearChapterNavigation();currentContext=context;currentMatches=matches||[];back.hidden=true;setHeader("Relevant Book Content","Databricks Data Intelligence Platform");
-    document.title="Relevant Book Content";setLocation({bookNav:true,view:"matches",canGoBack:false},historyMode);announce("Returned to book matches");
-    if(!currentMatches.length){content.innerHTML='<section class="empty-state"><h1>No direct book match</h1><p>The selected architecture component is not covered directly in this edition.</p></section>';return}
-    const head=document.createElement("section");head.className="context-head";head.innerHTML='<h1></h1><p></p>';head.querySelector("h1").textContent=context.name;head.querySelector("p").textContent="Relevant passages from the book";
+    clearChapterNavigation();currentContext=context||currentContext||{name:"Book introduction"};currentMatches=matches&&matches.length?matches:[introductionMatch()].filter(Boolean);back.hidden=true;setHeader("Relevant Book Content",book.title);
+    document.title="Relevant Book Content";setLocation({bookNav:true,view:"matches",canGoBack:false},historyMode);announce(currentMatches[0]&&currentMatches[0].fallback?"No direct match; showing the book introduction":"Returned to book matches");
+    if(!currentMatches.length){content.innerHTML='<section class="empty-state"><h1>Book introduction unavailable</h1><p>The book content could not be loaded.</p></section>';return}
+    const head=document.createElement("section");head.className="context-head";head.innerHTML='<h1></h1><p></p>';head.querySelector("h1").textContent=currentContext.name;head.querySelector("p").textContent="Relevant passages from the book";
+    if(currentMatches[0].fallback)head.querySelector("p").textContent="No direct match — start with the book introduction";
     const list=document.createElement("div");list.className="matches";
     for(const [index,match] of currentMatches.entries()){const button=document.createElement("button");button.type="button";button.className="match-card";button.innerHTML='<strong></strong><span></span><small></small>';button.querySelector("strong").textContent=match.sectionTitle;button.querySelector("span").textContent=match.chapterTitle;button.querySelector("small").textContent=match.excerpt;button.addEventListener("click",()=>{lastMatchIndex=index;openPassage(match.chapter,match.section,{historyMode:"push",canGoBack:true})});list.append(button)}
     content.replaceChildren(head,list);content.insertAdjacentHTML("beforeend",license());requestAnimationFrame(()=>{const target=list.children[lastMatchIndex];if(historyMode===null&&target)target.focus();else content.focus({preventScroll:true})});
@@ -59,6 +62,6 @@
   addEventListener("popstate",event=>{const state=event.state;if(!state||!state.bookNav)return;if(state.view==="matches")renderMatches(currentContext,currentMatches,null);else if(state.view==="section")openPassage(state.chapter,state.section,{historyMode:null,canGoBack:state.canGoBack});else if(state.view==="chapter")openChapter(state.chapter,null,{historyMode:null,canGoBack:state.canGoBack})});
   addEventListener("message",event=>{if(event.origin!==location.origin||!event.data)return;if(event.data.type==="databricks-addon-theme")setTheme(event.data.theme);if(event.data.type==="databricks-addon-context"){currentContext=event.data.context;currentMatches=event.data.matches||[];if(!query().get("chapter"))renderMatches(currentContext,currentMatches)}});
   document.addEventListener("keydown",event=>{if(event.key==="Escape"&&query().get("embedded")==="1"){event.preventDefault();parent.postMessage({type:"databricks-addon-escape"},location.origin)}});
-  fetch("book.json",{cache:"no-store"}).then(response=>response.json()).then(data=>{book=data;const params=query();if(params.get("chapter")){if(params.get("view")==="chapter")openChapter(params.get("chapter"),null,{historyMode:"replace",canGoBack:false});else openPassage(params.get("chapter"),params.get("section"),{historyMode:"replace",canGoBack:false})}else setLocation({bookNav:true,view:"matches",canGoBack:false},"replace")}).catch(()=>{content.innerHTML='<section class="empty-state"><h1>Book content unavailable</h1></section>'});
+  fetch("book.json",{cache:"no-store"}).then(response=>response.json()).then(data=>{book=data;contextLabel.textContent=book.title||contextLabel.textContent;if(book.sourceUrl){bookLink.href=book.sourceUrl;bookLink.textContent=book.title+" — view or download PDF on Springer ↗";bookLink.hidden=false}else bookLink.hidden=true;const params=query();if(params.get("chapter")){if(params.get("view")==="chapter")openChapter(params.get("chapter"),null,{historyMode:"replace",canGoBack:false});else openPassage(params.get("chapter"),params.get("section"),{historyMode:"replace",canGoBack:false})}else if(currentContext)renderMatches(currentContext,currentMatches);else setLocation({bookNav:true,view:"matches",canGoBack:false},"replace")}).catch(()=>{content.innerHTML='<section class="empty-state"><h1>Book content unavailable</h1></section>'});
   setTheme(query().get("theme"));
 })();

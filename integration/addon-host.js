@@ -20,6 +20,10 @@
   const words=value=>[...new Set(normalize(value).split(" ").filter(word=>word.length>2&&!stop.has(word)))];
   function sameOrigin(value){const url=new URL(value,manifestUrl);return url.origin===location.origin?url:null}
   function excerpt(text,phrases){const clean=(text||"").replace(/\s+/g," ").trim();const lower=clean.toLowerCase();let at=-1;for(const phrase of phrases){at=lower.indexOf(phrase);if(at>=0)break}const start=Math.max(0,(at<0?0:at)-70);return(start?"…":"")+clean.slice(start,start+220)+(start+220<clean.length?"…":"")}
+  function introductionMatch(){
+    const chapter=book&&book.chapters.find(item=>normalize(item.title)==="introduction");const section=chapter&&chapter.sections.find(item=>item.depth>1);if(!chapter||!section)return null;
+    return {score:0,chapter:chapter.slug,chapterTitle:chapter.title,section:section.id,sectionTitle:section.title||chapter.title,excerpt:excerpt(section.text,[]),fallback:true};
+  }
 
   function rank(context){
     if(!book||!context||!context.name)return [];
@@ -32,7 +36,7 @@
       if(score>=18)matches.push({score,chapter:chapter.slug,chapterTitle:chapter.title,section:section.id,sectionTitle:section.title||chapter.title,excerpt:excerpt(section.text,phrases)});
     }
     matches.sort((a,b)=>b.score-a.score);
-    const seen=new Set();return matches.filter(match=>{const key=match.chapter+"#"+match.section;if(seen.has(key))return false;seen.add(key);return true}).slice(0,3);
+    const seen=new Set(),ranked=matches.filter(match=>{const key=match.chapter+"#"+match.section;if(seen.has(key))return false;seen.add(key);return true}).slice(0,3);const fallback=introductionMatch();return ranked.length?ranked:(fallback?[fallback]:[]);
   }
 
   function officialResources(context){
@@ -71,7 +75,7 @@
     if(!context.name)return;const signature=[context.name,context.section,context.tagline].join("|");if(body.dataset.bookContext===signature)return;
     body.dataset.bookContext=signature;currentContext=context;currentMatches=rank(context);body.querySelectorAll(".addon-context-card").forEach(node=>node.remove());
     if(!currentMatches.length){sendContext();return}
-    const card=document.createElement("section");card.className="addon-context-card";const heading=document.createElement("h4");heading.textContent="From the book";card.append(heading);
+    const card=document.createElement("section");card.className="addon-context-card";const heading=document.createElement("h4");heading.textContent=currentMatches[0].fallback?"Start with the book introduction":"From the book";const identity=document.createElement("div");identity.className="addon-book-identity";const bookTitle=document.createElement("strong");bookTitle.textContent=book.title||contextAddon.title;identity.append(bookTitle);if(book.sourceUrl){const sourceLink=document.createElement("a");sourceLink.href=book.sourceUrl;sourceLink.target="_blank";sourceLink.rel="noopener";sourceLink.textContent="View or download PDF on Springer ↗";identity.append(sourceLink)}card.append(heading,identity);if(currentMatches[0].fallback){const note=document.createElement("p");note.className="addon-context-fallback";note.textContent="No direct book match for this component.";card.append(note)}
     for(const [index,match] of currentMatches.entries()){
       if(index===1){const more=document.createElement("p");more.className="addon-context-more";more.textContent="More book matches";card.append(more)}
       const item=document.createElement("article");const headingId="addon-match-"+index+"-"+match.section.replace(/[^a-z0-9_-]/gi,"-");item.className="addon-context-link"+(index?" compact":"");item.setAttribute("aria-labelledby",headingId);item.innerHTML='<h5 id="'+headingId+'"></h5><span></span>'+(index?'':'<p></p>')+'<div class="addon-context-actions"></div>';item.querySelector("h5").textContent=match.sectionTitle;item.querySelector("span").textContent=match.chapterTitle;if(!index)item.querySelector("p").textContent=match.excerpt;

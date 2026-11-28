@@ -94,7 +94,7 @@ fs.rmSync(outputDir,{recursive:true,force:true});
 fs.mkdirSync(outputDir,{recursive:true});
 for(const file of ["index.html","reader.css","reader.js"]) fs.copyFileSync(path.join(root,"addon","reader",file),path.join(outputDir,file));
 fs.cpSync(path.join(sourceDir,"images"),path.join(outputDir,"images"),{recursive:true});
-fs.writeFileSync(path.join(outputDir,"book.json"),JSON.stringify({schemaVersion:1,title:"Databricks Data Intelligence Platform: Powering the Agentic Era",chapters}));
+fs.writeFileSync(path.join(outputDir,"book.json"),JSON.stringify({schemaVersion:1,title:"Databricks Data Intelligence Platform: Powering the Agentic Era",sourceUrl:"https://link.springer.com/book/10.1007/979-8-8688-2524-8",chapters}));
 console.log(`Built ${chapters.length} chapters in ${outputDir}`);
 return {outputDir,chapters};
 }
